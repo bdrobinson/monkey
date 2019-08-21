@@ -25,39 +25,39 @@ impl Lexer {
         let token = match self.ch {
             '=' => token::Token {
                 tokenType: String::from(token::ASSIGN),
-                literal: self.ch,
+                literal: self.ch.to_string(),
             },
             ';' => token::Token {
                 tokenType: String::from(token::SEMICOLON),
-                literal: self.ch,
+                literal: self.ch.to_string(),
             },
             '(' => token::Token {
                 tokenType: String::from(token::LPAREN),
-                literal: self.ch,
+                literal: self.ch.to_string(),
             },
             ')' => token::Token {
                 tokenType: String::from(token::RPAREN),
-                literal: self.ch,
+                literal: self.ch.to_string(),
             },
             ',' => token::Token {
                 tokenType: String::from(token::COMMA),
-                literal: self.ch,
+                literal: self.ch.to_string(),
             },
             '+' => token::Token {
                 tokenType: String::from(token::PLUS),
-                literal: self.ch,
+                literal: self.ch.to_string(),
             },
             '{' => token::Token {
                 tokenType: String::from(token::LBRACE),
-                literal: self.ch,
+                literal: self.ch.to_string(),
             },
             '}' => token::Token {
                 tokenType: String::from(token::RBRACE),
-                literal: self.ch,
+                literal: self.ch.to_string(),
             },
             '\0' => token::Token {
                 tokenType: String::from(token::EOF),
-                literal: self.ch,
+                literal: self.ch.to_string(),
             },
             _ => {
                 panic!("Unexpected token");

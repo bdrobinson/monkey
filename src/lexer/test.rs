@@ -6,7 +6,7 @@ mod test {
     use crate::token;
     struct LexerTestResult {
         expected_type: String,
-        expected_literal: char,
+        expected_literal: String,
     }
 
     #[test]
@@ -15,39 +15,39 @@ mod test {
         let tests = [
             LexerTestResult {
                 expected_type: String::from(token::ASSIGN),
-                expected_literal: '=',
+                expected_literal: String::from("="),
             },
             LexerTestResult {
                 expected_type: String::from(token::PLUS),
-                expected_literal: '+',
+                expected_literal: String::from("+"),
             },
             LexerTestResult {
                 expected_type: String::from(token::LPAREN),
-                expected_literal: '(',
+                expected_literal: String::from("("),
             },
             LexerTestResult {
                 expected_type: String::from(token::RPAREN),
-                expected_literal: ')',
+                expected_literal: String::from(")"),
             },
             LexerTestResult {
                 expected_type: String::from(token::LBRACE),
-                expected_literal: '{',
+                expected_literal: String::from("{"),
             },
             LexerTestResult {
                 expected_type: String::from(token::RBRACE),
-                expected_literal: '}',
+                expected_literal: String::from("}"),
             },
             LexerTestResult {
                 expected_type: String::from(token::COMMA),
-                expected_literal: ',',
+                expected_literal: String::from(","),
             },
             LexerTestResult {
                 expected_type: String::from(token::SEMICOLON),
-                expected_literal: ';',
+                expected_literal: String::from(";"),
             },
             LexerTestResult {
                 expected_type: String::from(token::EOF),
-                expected_literal: '\0',
+                expected_literal: String::from("\0"),
             },
         ];
         let mut lexer = lexer::new(&input);

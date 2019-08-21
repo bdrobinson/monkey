@@ -24,5 +24,5 @@ pub const LET: &str = "LET";
 
 pub struct Token {
     pub tokenType: String,
-    pub literal: char,
+    pub literal: String,
 }
