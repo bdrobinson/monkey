@@ -9,46 +9,26 @@ mod test {
         expected_literal: String,
     }
 
+    fn result(token_type: &str, literal: &str) -> LexerTestResult {
+        LexerTestResult {
+            expected_type: String::from(token_type),
+            expected_literal: String::from(literal),
+        }
+    }
+
     #[test]
     fn test_next_token() {
         let input = String::from("=+(){},;");
         let tests = [
-            LexerTestResult {
-                expected_type: String::from(token::ASSIGN),
-                expected_literal: String::from("="),
-            },
-            LexerTestResult {
-                expected_type: String::from(token::PLUS),
-                expected_literal: String::from("+"),
-            },
-            LexerTestResult {
-                expected_type: String::from(token::LPAREN),
-                expected_literal: String::from("("),
-            },
-            LexerTestResult {
-                expected_type: String::from(token::RPAREN),
-                expected_literal: String::from(")"),
-            },
-            LexerTestResult {
-                expected_type: String::from(token::LBRACE),
-                expected_literal: String::from("{"),
-            },
-            LexerTestResult {
-                expected_type: String::from(token::RBRACE),
-                expected_literal: String::from("}"),
-            },
-            LexerTestResult {
-                expected_type: String::from(token::COMMA),
-                expected_literal: String::from(","),
-            },
-            LexerTestResult {
-                expected_type: String::from(token::SEMICOLON),
-                expected_literal: String::from(";"),
-            },
-            LexerTestResult {
-                expected_type: String::from(token::EOF),
-                expected_literal: String::from("\0"),
-            },
+            result(token::ASSIGN, "="),
+            result(token::PLUS, "+"),
+            result(token::LPAREN, "("),
+            result(token::RPAREN, ")"),
+            result(token::LBRACE, "{"),
+            result(token::RBRACE, "}"),
+            result(token::COMMA, ","),
+            result(token::SEMICOLON, ";"),
+            result(token::EOF, "\0"),
         ];
         let mut lexer = lexer::new(&input);
         for test in tests.iter() {
