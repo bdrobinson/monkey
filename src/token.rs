@@ -1,4 +1,6 @@
 
+use std::collections::HashMap;
+
 pub const ILLEGAL: &str = "ILLEGAL";
 pub const EOF: &str = "EOF";
 
@@ -21,6 +23,13 @@ pub const RBRACE: &str = "}";
 // Keywords
 pub const FUNCTION: &str = "FUNCTION";
 pub const LET: &str = "LET";
+
+pub fn get_keywords() -> HashMap<String, String> {
+    let mut keywords: HashMap<String, String> = HashMap::new();
+    keywords.insert(String::from("fn"), String::from(FUNCTION));
+    keywords.insert(String::from("let"), String::from(LET));
+    keywords
+}
 
 pub struct Token {
     pub tokenType: String,
