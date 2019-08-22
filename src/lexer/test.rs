@@ -75,7 +75,7 @@ mod test {
         let mut i = 0;
         for test in tests.iter() {
             let tok = lexer.next_token();
-            assert_eq!(tok.tokenType, test.expected_type);
+            assert_eq!(tok.token_type, test.expected_type);
             assert_eq!(tok.literal, test.expected_literal);
             i += 1;
             println!("{}", tok.literal);

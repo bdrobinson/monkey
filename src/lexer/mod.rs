@@ -39,39 +39,39 @@ impl Lexer {
         self.skip_whitespace();
         let token = match self.ch {
             '=' => token::Token {
-                tokenType: String::from(token::ASSIGN),
+                token_type: String::from(token::ASSIGN),
                 literal: self.ch.to_string(),
             },
             ';' => token::Token {
-                tokenType: String::from(token::SEMICOLON),
+                token_type: String::from(token::SEMICOLON),
                 literal: self.ch.to_string(),
             },
             '(' => token::Token {
-                tokenType: String::from(token::LPAREN),
+                token_type: String::from(token::LPAREN),
                 literal: self.ch.to_string(),
             },
             ')' => token::Token {
-                tokenType: String::from(token::RPAREN),
+                token_type: String::from(token::RPAREN),
                 literal: self.ch.to_string(),
             },
             ',' => token::Token {
-                tokenType: String::from(token::COMMA),
+                token_type: String::from(token::COMMA),
                 literal: self.ch.to_string(),
             },
             '+' => token::Token {
-                tokenType: String::from(token::PLUS),
+                token_type: String::from(token::PLUS),
                 literal: self.ch.to_string(),
             },
             '{' => token::Token {
-                tokenType: String::from(token::LBRACE),
+                token_type: String::from(token::LBRACE),
                 literal: self.ch.to_string(),
             },
             '}' => token::Token {
-                tokenType: String::from(token::RBRACE),
+                token_type: String::from(token::RBRACE),
                 literal: self.ch.to_string(),
             },
             '\0' => token::Token {
-                tokenType: String::from(token::EOF),
+                token_type: String::from(token::EOF),
                 literal: self.ch.to_string(),
             },
             _ => {
@@ -82,18 +82,18 @@ impl Lexer {
                         .unwrap_or(&String::from(token::IDENT))
                         .to_string();
                     return token::Token {
-                        tokenType: token_type,
+                        token_type: token_type,
                         literal,
                     };
                 } else if is_digit(self.ch) {
                     let literal = self.read_number();
                     token::Token {
-                        tokenType: String::from(token::INT),
+                        token_type: String::from(token::INT),
                         literal,
                     }
                 } else {
                     token::Token {
-                        tokenType: String::from(token::ILLEGAL),
+                        token_type: String::from(token::ILLEGAL),
                         literal: self.ch.to_string(),
                     }
                 }

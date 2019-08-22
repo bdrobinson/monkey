@@ -32,6 +32,6 @@ pub fn get_keywords() -> HashMap<String, String> {
 }
 
 pub struct Token {
-    pub tokenType: String,
+    pub token_type: String,
     pub literal: String,
 }
