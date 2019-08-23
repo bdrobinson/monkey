@@ -4,17 +4,7 @@ mod test {
 
     use crate::lexer;
     use crate::token;
-    struct LexerTestResult {
-        expected_type: String,
-        expected_literal: String,
-    }
-
-    fn result(token_type: &str, literal: &str) -> LexerTestResult {
-        LexerTestResult {
-            expected_type: String::from(token_type),
-            expected_literal: String::from(literal),
-        }
-    }
+    use token::Token;
 
     #[test]
     fn test_next_token() {
@@ -28,54 +18,79 @@ mod test {
         let result = add(five, ten);
         ",
         );
-        // let input = String::from("5 ;");
+
         let tests = [
-            result(token::LET, "let"),
-            result(token::IDENT, "five"),
-            result(token::ASSIGN, "="),
-            result(token::INT, "5"),
-            result(token::SEMICOLON, ";"),
+            Token::Let,
+            Token::Ident {
+                literal: String::from("five"),
+            },
+            Token::Assign,
+            Token::Int {
+                literal: String::from("5"),
+            },
+            Token::Semicolon,
 
-            result(token::LET, "let"),
-            result(token::IDENT, "ten"),
-            result(token::ASSIGN, "="),
-            result(token::INT, "10"),
-            result(token::SEMICOLON, ";"),
+            Token::Let,
+            Token::Ident {
+                literal: String::from("ten"),
+            },
+            Token::Assign,
+            Token::Int {
+                literal: String::from("10"),
+            },
+            Token::Semicolon,
 
-            result(token::LET, "let"),
-            result(token::IDENT, "add"),
-            result(token::ASSIGN, "="),
-            result(token::FUNCTION, "fn"),
-            result(token::LPAREN, "("),
-            result(token::IDENT, "x"),
-            result(token::COMMA, ","),
-            result(token::IDENT, "y"),
-            result(token::RPAREN, ")"),
-            result(token::LBRACE, "{"),
-            result(token::IDENT, "x"),
-            result(token::PLUS, "+"),
-            result(token::IDENT, "y"),
-            result(token::SEMICOLON, ";"),
-            result(token::RBRACE, "}"),
-            result(token::SEMICOLON, ";"),
-            result(token::LET, "let"),
-            result(token::IDENT, "result"),
-            result(token::ASSIGN, "="),
-            result(token::IDENT, "add"),
-            result(token::LPAREN, "("),
-            result(token::IDENT, "five"),
-            result(token::COMMA, ","),
-            result(token::IDENT, "ten"),
-            result(token::RPAREN, ")"),
-            result(token::SEMICOLON, ";"),
+            Token::Let,
+            Token::Ident {
+                literal: String::from("add"),
+            },
+            Token::Assign,
+            Token::Function,
+            Token::LParen,
+            Token::Ident {
+                literal: String::from("x"),
+            },
+            Token::Comma,
+            Token::Ident {
+                literal: String::from("y"),
+            },
+            Token::RParen,
+            Token::LBrace,
+            Token::Ident {
+                literal: String::from("x"),
+            },
+            Token::Plus,
+            Token::Ident {
+                literal: String::from("y"),
+            },
+            Token::Semicolon,
+            Token::RBrace,
+            Token::Semicolon,
+            Token::Let,
+            Token::Ident {
+                literal: String::from("result"),
+            },
+            Token::Assign,
+            Token::Ident {
+                literal: String::from("add"),
+            },
+            Token::LParen,
+            Token::Ident {
+                literal: String::from("five"),
+            },
+            Token::Comma,
+            Token::Ident {
+                literal: String::from("ten"),
+            },
+            Token::RParen,
+            Token::Semicolon,
 
-            result(token::EOF, "\0"),
+            Token::Eof,
         ];
         let mut lexer = lexer::new(&input);
         for test in tests.iter() {
             let tok = lexer.next_token();
-            assert_eq!(tok.token_type, test.expected_type);
-            assert_eq!(tok.literal, test.expected_literal);
+            assert_eq!(&tok, test);
         }
     }
 }

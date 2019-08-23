@@ -38,62 +38,25 @@ impl Lexer {
     fn next_token(&mut self) -> token::Token {
         self.skip_whitespace();
         let token = match self.ch {
-            '=' => token::Token {
-                token_type: String::from(token::ASSIGN),
-                literal: self.ch.to_string(),
-            },
-            ';' => token::Token {
-                token_type: String::from(token::SEMICOLON),
-                literal: self.ch.to_string(),
-            },
-            '(' => token::Token {
-                token_type: String::from(token::LPAREN),
-                literal: self.ch.to_string(),
-            },
-            ')' => token::Token {
-                token_type: String::from(token::RPAREN),
-                literal: self.ch.to_string(),
-            },
-            ',' => token::Token {
-                token_type: String::from(token::COMMA),
-                literal: self.ch.to_string(),
-            },
-            '+' => token::Token {
-                token_type: String::from(token::PLUS),
-                literal: self.ch.to_string(),
-            },
-            '{' => token::Token {
-                token_type: String::from(token::LBRACE),
-                literal: self.ch.to_string(),
-            },
-            '}' => token::Token {
-                token_type: String::from(token::RBRACE),
-                literal: self.ch.to_string(),
-            },
-            '\0' => token::Token {
-                token_type: String::from(token::EOF),
-                literal: self.ch.to_string(),
-            },
+            '=' => token::Token::Assign,
+            ';' => token::Token::Semicolon,
+            '(' => token::Token::LParen,
+            ')' => token::Token::RParen,
+            ',' => token::Token::Comma,
+            '+' => token::Token::Plus,
+            '{' => token::Token::LBrace,
+            '}' => token::Token::RBrace,
+            '\0' => token::Token::Eof,
             _ => {
                 if is_letter(self.ch) {
                     let literal = self.read_identifier();
-                    let token_type = token::get_keywords()
-                        .get(&literal)
-                        .unwrap_or(&String::from(token::IDENT))
-                        .to_string();
-                    return token::Token {
-                        token_type: token_type,
-                        literal,
-                    };
+                    return token::token_from_word(&literal)
+                        .unwrap_or(token::Token::Ident { literal });
                 } else if is_digit(self.ch) {
                     let literal = self.read_number();
-                    return token::Token {
-                        token_type: String::from(token::INT),
-                        literal,
-                    };
+                    return token::Token::Int { literal };
                 } else {
-                    return token::Token {
-                        token_type: String::from(token::ILLEGAL),
+                    return token::Token::Illegal {
                         literal: self.ch.to_string(),
                     };
                 }
