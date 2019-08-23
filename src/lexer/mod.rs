@@ -87,18 +87,19 @@ impl Lexer {
                     };
                 } else if is_digit(self.ch) {
                     let literal = self.read_number();
-                    token::Token {
+                    return token::Token {
                         token_type: String::from(token::INT),
                         literal,
-                    }
+                    };
                 } else {
-                    token::Token {
+                    return token::Token {
                         token_type: String::from(token::ILLEGAL),
                         literal: self.ch.to_string(),
-                    }
+                    };
                 }
             }
         };
+        // must only be called for the non-default cases.
         self.read_char();
         token
     }

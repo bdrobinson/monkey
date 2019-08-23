@@ -20,8 +20,8 @@ mod test {
     fn test_next_token() {
         let input = String::from(
             "
-        let five = 5 ;
-        let ten = 10 ;
+        let five = 5;
+        let ten = 10;
         let add = fn(x, y) {
             x + y;
         };
@@ -72,13 +72,10 @@ mod test {
             result(token::EOF, "\0"),
         ];
         let mut lexer = lexer::new(&input);
-        let mut i = 0;
         for test in tests.iter() {
             let tok = lexer.next_token();
             assert_eq!(tok.token_type, test.expected_type);
             assert_eq!(tok.literal, test.expected_literal);
-            i += 1;
-            println!("{}", tok.literal);
         }
     }
 }
