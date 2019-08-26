@@ -14,6 +14,7 @@ pub enum Token {
     Int { literal: String },
     Assign,
     Plus,
+    Minus,
     Comma,
     Semicolon,
     LParen,
@@ -22,4 +23,9 @@ pub enum Token {
     RBrace,
     Function,
     Let,
+    Lt,
+    Gt,
+    Bang,
+    Asterisk,
+    Slash,
 }

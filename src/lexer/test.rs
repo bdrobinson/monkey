@@ -16,6 +16,8 @@ mod test {
             x + y;
         };
         let result = add(five, ten);
+        !-/*5;
+        5 < 10 > 5;
         ",
         );
 
@@ -85,6 +87,27 @@ mod test {
             Token::RParen,
             Token::Semicolon,
 
+            Token::Bang,
+            Token::Minus,
+            Token::Slash,
+            Token::Asterisk,
+            Token::Int {
+                literal: String::from("5"),
+            },
+            Token::Semicolon,
+            Token::Int {
+                literal: String::from("5"),
+            },
+            Token::Lt,
+            Token::Int {
+                literal: String::from("10"),
+            },
+            Token::Gt,
+            Token::Int {
+                literal: String::from("5"),
+            },
+            Token::Semicolon,
+
             Token::Eof,
         ];
         let mut lexer = lexer::new(&input);
@@ -94,3 +117,5 @@ mod test {
         }
     }
 }
+// !-/*5;
+// 5 < 10 > 5;
