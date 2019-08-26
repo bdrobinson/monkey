@@ -18,6 +18,12 @@ mod test {
         let result = add(five, ten);
         !-/*5;
         5 < 10 > 5;
+
+        if (5 < 10) {
+            return true;
+        } else {
+            return false;
+        }
         ",
         );
 
@@ -108,6 +114,28 @@ mod test {
             },
             Token::Semicolon,
 
+            Token::If,
+            Token::LParen,
+            Token::Int {
+                literal: String::from("5"),
+            },
+            Token::Lt,
+            Token::Int {
+                literal: String::from("10"),
+            },
+            Token::RParen,
+            Token::LBrace,
+            Token::Return,
+            Token::True,
+            Token::Semicolon,
+            Token::RBrace,
+            Token::Else,
+            Token::LBrace,
+            Token::Return,
+            Token::False,
+            Token::Semicolon,
+            Token::RBrace,
+
             Token::Eof,
         ];
         let mut lexer = lexer::new(&input);
@@ -117,5 +145,3 @@ mod test {
         }
     }
 }
-// !-/*5;
-// 5 < 10 > 5;
