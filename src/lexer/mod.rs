@@ -38,7 +38,14 @@ impl Lexer {
     fn next_token(&mut self) -> token::Token {
         self.skip_whitespace();
         let token = match self.ch {
-            '=' => token::Token::Assign,
+            '=' => {
+                if self.peek_char() == '=' {
+                    self.read_char();
+                    token::Token::Eq
+                } else {
+                    token::Token::Assign
+                }
+            }
             ';' => token::Token::Semicolon,
             '(' => token::Token::LParen,
             ')' => token::Token::RParen,
@@ -46,7 +53,14 @@ impl Lexer {
             '+' => token::Token::Plus,
             '-' => token::Token::Minus,
             '/' => token::Token::Slash,
-            '!' => token::Token::Bang,
+            '!' => {
+                if self.peek_char() == '=' {
+                    self.read_char();
+                    token::Token::NotEq
+                } else {
+                    token::Token::Bang
+                }
+            }
             '<' => token::Token::Lt,
             '>' => token::Token::Gt,
             '*' => token::Token::Asterisk,
@@ -98,5 +112,14 @@ impl Lexer {
             self.read_char();
         }
         self.input[start_pos..self.position].to_string()
+    }
+
+    fn peek_char(&self) -> char {
+        let chars: Vec<char> = self.input.chars().collect();
+        if self.read_position >= chars.len() {
+            '\0'
+        } else {
+            chars[self.read_position]
+        }
     }
 }

@@ -24,6 +24,9 @@ mod test {
         } else {
             return false;
         }
+
+        10 == 10;
+        10 != 9;
         ",
         );
 
@@ -135,6 +138,24 @@ mod test {
             Token::False,
             Token::Semicolon,
             Token::RBrace,
+
+            Token::Int {
+                literal: String::from("10"),
+            },
+            Token::Eq,
+            Token::Int {
+                literal: String::from("10"),
+            },
+            Token::Semicolon,
+
+            Token::Int {
+                literal: String::from("10"),
+            },
+            Token::NotEq,
+            Token::Int {
+                literal: String::from("9"),
+            },
+            Token::Semicolon,
 
             Token::Eof,
         ];

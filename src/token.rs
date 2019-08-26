@@ -38,4 +38,6 @@ pub enum Token {
     Return,
     True,
     False,
+    Eq,
+    NotEq,
 }
