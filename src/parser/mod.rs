@@ -48,6 +48,10 @@ impl Parser<'_> {
                 let let_statement = self.parse_let_statement()?;
                 Ok(ast::Statement::Let(let_statement))
             }
+            Token::Return => {
+                let return_statement = self.parse_return_statement()?;
+                Ok(ast::Statement::Return(return_statement))
+            }
             a => {
                 return Err(format!("Unexpected token: {:?}", a));
             }
@@ -63,6 +67,20 @@ impl Parser<'_> {
         } else {
             parser_err(TokenType::Ident, &self.cur_token)
         }
+    }
+
+    fn parse_return_statement(&mut self) -> ParserResult<ast::ReturnStatement> {
+        self.assert_cur_token_type(TokenType::Return)?;
+
+        // Next we expect an expression
+        self.next_token();
+        // let expr = self.parse_expression();
+
+        // end with semi
+        self.next_token();
+        self.assert_cur_token_type(TokenType::Semicolon)?;
+
+        Ok(ast::ReturnStatement {})
     }
 
     fn assert_cur_token_type(&self, expected: TokenType) -> Result<(), String> {

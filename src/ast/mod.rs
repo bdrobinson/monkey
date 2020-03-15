@@ -6,6 +6,7 @@ pub enum Node {
 #[derive(Debug, PartialEq)]
 pub enum Statement {
     Let(LetStatement),
+    Return(ReturnStatement),
 }
 
 #[derive(Debug, PartialEq)]
@@ -22,6 +23,11 @@ pub struct Program {
 pub struct LetStatement {
     pub name: Identifier,
     // value: Expression,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ReturnStatement {
+    // pub value: Expression,
 }
 
 #[derive(Debug, PartialEq)]
