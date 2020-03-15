@@ -1,17 +1,20 @@
 mod test;
 
-use crate::{ast, lexer, token::Token};
+use crate::{
+    ast, lexer,
+    token::{Token, TokenType},
+};
 
 type ParserResult<T> = Result<T, String>;
 
-struct Parser<'a> {
+pub struct Parser<'a> {
     lexer: &'a mut lexer::Lexer,
     cur_token: Token,
     peek_token: Token,
 }
 
 impl Parser<'_> {
-    fn new(lexer: &mut lexer::Lexer) -> Parser {
+    pub fn new(lexer: &mut lexer::Lexer) -> Parser {
         let first_token = lexer.next_token();
         let second_token = lexer.next_token();
         Parser {
@@ -26,60 +29,69 @@ impl Parser<'_> {
         self.peek_token = self.lexer.next_token();
     }
 
-    fn parse_program(&mut self) -> Result<ast::Program, String> {
+    pub fn parse_program(&mut self) -> Result<ast::Program, String> {
         let mut program = ast::Program { statements: vec![] };
         loop {
-            let next_statement: Option<ast::Statement> = match &self.cur_token {
-                Token::Let => {
-                    let let_statement = self.parse_let_statement()?;
-                    Some(ast::Statement::Let(let_statement))
-                }
-                Token::Eof => None,
-                a => {
-                    return Err(format!("Unexpected token: {:?}", a));
-                }
+            if let Token::Eof = self.cur_token {
+                break;
             };
-            match next_statement {
-                Some(next_statement) => {
-                    program.statements.push(next_statement);
-                }
-                None => break,
-            };
+            let next_statement = self.parse_statement()?;
+            program.statements.push(next_statement);
             self.next_token();
         }
         Ok(program)
     }
 
-    fn parse_let_statement(&mut self) -> ParserResult<ast::LetStatement> {
-        self.next_token();
-        let identifier = match &self.cur_token {
-            Token::Ident { literal } => ast::Identifier {
-                value: literal.clone(),
-            },
+    fn parse_statement(&mut self) -> ParserResult<ast::Statement> {
+        let r: ParserResult<ast::Statement> = match &self.cur_token {
+            Token::Let => {
+                let let_statement = self.parse_let_statement()?;
+                Ok(ast::Statement::Let(let_statement))
+            }
             a => {
-                return Err(parserErr("Ident", &a));
+                return Err(format!("Unexpected token: {:?}", a));
             }
         };
-        self.next_token();
+        r
+    }
 
-        match &self.cur_token {
-            Token::Assign => {}
-            a => {
-                return Err(parserErr("Assign", &a));
-            }
+    fn parse_identifier(&mut self) -> ParserResult<ast::Identifier> {
+        if let Token::Ident { literal } = &self.cur_token {
+            Ok(ast::Identifier {
+                value: literal.clone(),
+            })
+        } else {
+            parser_err(TokenType::Ident, &self.cur_token)
         }
+    }
 
+    fn assert_cur_token_type(&self, expected: TokenType) -> Result<(), String> {
+        if self.cur_token.token_type() == expected {
+            Ok(())
+        } else {
+            parser_err(expected, &self.cur_token)
+        }
+    }
+
+    fn parse_let_statement(&mut self) -> ParserResult<ast::LetStatement> {
+        // Check we're starting with a Let
+        self.assert_cur_token_type(TokenType::Let)?;
+
+        // Identifier should be next
+        self.next_token();
+        let identifier = self.parse_identifier()?;
+
+        // Then assign
+        self.next_token();
+        self.assert_cur_token_type(TokenType::Assign)?;
+
+        // Now the expression
         self.next_token();
         let _ = self.parse_expression();
 
+        // Make sure it was terminated
         self.next_token();
-        match &self.cur_token {
-            Token::Semicolon => {}
-            a => {
-                return Err(parserErr("Semi", &a));
-            }
-        }
-
+        self.assert_cur_token_type(TokenType::Semicolon)?;
         Ok(ast::LetStatement { name: identifier })
     }
 
@@ -89,6 +101,10 @@ impl Parser<'_> {
     }
 }
 
-fn parserErr(expected: &'static str, actual: &Token) -> String {
-    format!("Expected {}, got {:?}", expected, actual)
+fn parser_err<T>(expected_type: TokenType, actual: &Token) -> ParserResult<T> {
+    Err(format!(
+        "Expected {}, got {:?}",
+        expected_type.to_string(),
+        actual
+    ))
 }

@@ -1,7 +1,7 @@
 use io::BufRead;
 use std::io;
 
-use crate::token::Token;
+use crate::{lexer, parser};
 
 const PROMPT: &str = ">> ";
 
@@ -13,19 +13,15 @@ pub fn start(input: &mut dyn io::BufRead, output: &mut dyn io::Write) -> Result<
     for line_result in input.lines() {
         let line = line_result.unwrap();
         let line = line.trim();
-        let mut lexer = crate::lexer::new(line);
-        loop {
-            let tok = lexer.next_token();
-            match tok {
-                Token::Eof => {
-                    break;
-                }
-                Token::Illegal { literal } => {
-                    panic!("Got an illegal token: {}", literal);
-                }
-                _ => {
-                    output.write(format!("{:?}\n", tok).as_bytes())?;
-                }
+        let mut lexer = lexer::new(line);
+        let mut parser = parser::Parser::new(&mut lexer);
+        let program = parser.parse_program();
+        match program {
+            Ok(program) => {
+                output.write(format!("{:?}\n", program).as_bytes())?;
+            }
+            Err(message) => {
+                output.write(format!("Parsing failed: {}\n", message).as_bytes())?;
             }
         }
         output.write(PROMPT.as_bytes())?;
