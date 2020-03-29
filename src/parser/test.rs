@@ -13,17 +13,17 @@ mod test {
 
         let expected: Vec<ast::Statement> = vec![
             ast::Statement::Let(ast::LetStatement {
-                name: ast::Identifier {
+                name: ast::IdentifierExpression {
                     value: String::from("x"),
                 },
             }),
             ast::Statement::Let(ast::LetStatement {
-                name: ast::Identifier {
+                name: ast::IdentifierExpression {
                     value: String::from("y"),
                 },
             }),
             ast::Statement::Let(ast::LetStatement {
-                name: ast::Identifier {
+                name: ast::IdentifierExpression {
                     value: String::from("foobar"),
                 },
             }),
@@ -67,12 +67,14 @@ mod test {
             program.statements,
             vec![
                 ast::Statement::Expression(ast::ExpressionStatement {
-                    expression: ast::Expression::Identifier(ast::Identifier {
+                    expression: ast::Expression::Identifier(ast::IdentifierExpression {
                         value: String::from("foobar")
                     })
                 }),
                 ast::Statement::Expression(ast::ExpressionStatement {
-                    expression: ast::Expression::IntegerLiteral(ast::IntegerLiteral { value: 45 })
+                    expression: ast::Expression::IntegerLiteral(ast::IntegerLiteralExpression {
+                        value: 45
+                    })
                 }),
             ]
         );

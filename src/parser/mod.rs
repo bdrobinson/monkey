@@ -88,9 +88,9 @@ impl Parser<'_> {
         r
     }
 
-    fn parse_identifier(&mut self) -> ParserResult<ast::Identifier> {
+    fn parse_identifier(&mut self) -> ParserResult<ast::IdentifierExpression> {
         if let Token::Ident { literal } = &self.cur_token {
-            Ok(ast::Identifier {
+            Ok(ast::IdentifierExpression {
                 value: literal.clone(),
             })
         } else {
@@ -98,11 +98,11 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_integer_literal(&mut self) -> ParserResult<ast::IntegerLiteral> {
+    fn parse_integer_literal(&mut self) -> ParserResult<ast::IntegerLiteralExpression> {
         if let Token::Int { literal } = &self.cur_token {
             let parsed = literal.parse::<i64>().map_err(|_| "Could not parse int")?;
 
-            Ok(ast::IntegerLiteral { value: parsed })
+            Ok(ast::IntegerLiteralExpression { value: parsed })
         } else {
             parser_err(TokenType::Int, &self.cur_token)
         }

@@ -12,8 +12,8 @@ pub enum Statement {
 
 #[derive(Debug, PartialEq)]
 pub enum Expression {
-    Identifier(Identifier),
-    IntegerLiteral(IntegerLiteral),
+    Identifier(IdentifierExpression),
+    IntegerLiteral(IntegerLiteralExpression),
 }
 
 #[derive(Debug, PartialEq)]
@@ -23,7 +23,7 @@ pub struct Program {
 
 #[derive(Debug, PartialEq)]
 pub struct LetStatement {
-    pub name: Identifier,
+    pub name: IdentifierExpression,
     // value: Expression,
 }
 
@@ -33,12 +33,12 @@ pub struct ReturnStatement {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Identifier {
+pub struct IdentifierExpression {
     pub value: String,
 }
 
 #[derive(Debug, PartialEq)]
-pub struct IntegerLiteral {
+pub struct IntegerLiteralExpression {
     pub value: i64,
 }
 
