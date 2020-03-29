@@ -40,11 +40,41 @@ mod test {
         ";
         let program = read_program(input);
         assert_eq!(program.statements.len(), 2);
+        assert_eq!(
+            program.statements,
+            vec![
+                ast::Statement::Return(ast::ReturnStatement {}),
+                ast::Statement::Return(ast::ReturnStatement {}),
+            ]
+        )
     }
     fn read_program(input: &'static str) -> ast::Program {
         let mut lexer = lexer::new(input);
         let mut parser = parser::Parser::new(&mut lexer);
         let program = parser.parse_program().unwrap();
         program
+    }
+
+    #[test]
+    fn test_identifier_expression() {
+        let input = "
+            foobar;
+            45;
+        ";
+        let program = read_program(input);
+        assert_eq!(program.statements.len(), 2);
+        assert_eq!(
+            program.statements,
+            vec![
+                ast::Statement::Expression(ast::ExpressionStatement {
+                    expression: ast::Expression::Identifier(ast::Identifier {
+                        value: String::from("foobar")
+                    })
+                }),
+                ast::Statement::Expression(ast::ExpressionStatement {
+                    expression: ast::Expression::IntegerLiteral(ast::IntegerLiteral { value: 45 })
+                }),
+            ]
+        );
     }
 }

@@ -7,6 +7,19 @@ use crate::{
 
 type ParserResult<T> = Result<T, String>;
 
+type PrefixParseFn = fn() -> ast::Expression;
+type InfixParseFn = fn(ast::Expression) -> ast::Expression;
+
+#[derive(Debug, PartialOrd, PartialEq)]
+enum Precedence {
+    LOWEST,
+    EQUALS,  // == LESSGREATER // > or <
+    SUM,     // +
+    PRODUCT, // *
+    PREFIX,  // -X or !X
+    CALL,    // myFunction(X)
+}
+
 pub struct Parser<'a> {
     lexer: &'a mut lexer::Lexer,
     cur_token: Token,
@@ -22,6 +35,21 @@ impl Parser<'_> {
             cur_token: first_token,
             peek_token: second_token,
         }
+    }
+
+    fn parse_prefix(&mut self, token_type: &TokenType) -> ParserResult<ast::Expression> {
+        let expression: ast::Expression = match token_type {
+            TokenType::Ident => {
+                let ident = self.parse_identifier()?;
+                ast::Expression::Identifier(ident)
+            }
+            TokenType::Int => {
+                let int = self.parse_integer_literal()?;
+                ast::Expression::IntegerLiteral(int)
+            }
+            _ => panic!("Could not parse token {}", token_type.to_string()),
+        };
+        Ok(expression)
     }
 
     fn next_token(&mut self) {
@@ -52,8 +80,9 @@ impl Parser<'_> {
                 let return_statement = self.parse_return_statement()?;
                 Ok(ast::Statement::Return(return_statement))
             }
-            a => {
-                return Err(format!("Unexpected token: {:?}", a));
+            _ => {
+                let expression = self.parse_expression_statement()?;
+                Ok(ast::Statement::Expression(expression))
             }
         };
         r
@@ -66,6 +95,16 @@ impl Parser<'_> {
             })
         } else {
             parser_err(TokenType::Ident, &self.cur_token)
+        }
+    }
+
+    fn parse_integer_literal(&mut self) -> ParserResult<ast::IntegerLiteral> {
+        if let Token::Int { literal } = &self.cur_token {
+            let parsed = literal.parse::<i64>().map_err(|_| "Could not parse int")?;
+
+            Ok(ast::IntegerLiteral { value: parsed })
+        } else {
+            parser_err(TokenType::Int, &self.cur_token)
         }
     }
 
@@ -91,6 +130,14 @@ impl Parser<'_> {
         }
     }
 
+    fn assert_peek_token_type(&self, expected: TokenType) -> Result<(), String> {
+        if self.peek_token.token_type() == expected {
+            Ok(())
+        } else {
+            parser_err(expected, &self.cur_token)
+        }
+    }
+
     fn parse_let_statement(&mut self) -> ParserResult<ast::LetStatement> {
         // Check we're starting with a Let
         self.assert_cur_token_type(TokenType::Let)?;
@@ -105,7 +152,8 @@ impl Parser<'_> {
 
         // Now the expression
         self.next_token();
-        let _ = self.parse_expression();
+        // skip expresion for now
+        // let _ = self.parse_expression();
 
         // Make sure it was terminated
         self.next_token();
@@ -113,9 +161,20 @@ impl Parser<'_> {
         Ok(ast::LetStatement { name: identifier })
     }
 
-    fn parse_expression(&mut self) -> ParserResult<ast::Expression> {
-        // just skip for now
-        Err(String::from("Not implemented"))
+    fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<ast::Expression> {
+        let token_type = &self.cur_token.token_type();
+        let left_exp = self.parse_prefix(token_type)?;
+        Ok(left_exp)
+    }
+
+    fn parse_expression_statement(&mut self) -> ParserResult<ast::ExpressionStatement> {
+        let expression = self.parse_expression(Precedence::LOWEST)?;
+        self.assert_peek_token_type(TokenType::Semicolon)?;
+        // Consume the semicolon
+        self.next_token();
+        Ok(ast::ExpressionStatement {
+            expression: expression,
+        })
     }
 }
 
