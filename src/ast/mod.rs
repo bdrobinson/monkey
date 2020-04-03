@@ -14,6 +14,7 @@ pub enum Statement {
 pub enum Expression {
     Identifier(IdentifierExpression),
     IntegerLiteral(IntegerLiteralExpression),
+    Prefix(PrefixExpression),
 }
 
 #[derive(Debug, PartialEq)]
@@ -40,6 +41,18 @@ pub struct IdentifierExpression {
 #[derive(Debug, PartialEq)]
 pub struct IntegerLiteralExpression {
     pub value: i64,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum PrefixTokenOperator {
+    Bang,
+    Minus,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct PrefixExpression {
+    pub operator: PrefixTokenOperator,
+    pub right: Box<Expression>,
 }
 
 #[derive(Debug, PartialEq)]

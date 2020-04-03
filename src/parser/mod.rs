@@ -47,6 +47,10 @@ impl Parser<'_> {
                 let int = self.parse_integer_literal()?;
                 ast::Expression::IntegerLiteral(int)
             }
+            TokenType::Bang | TokenType::Minus => {
+                let prefix_expr = self.parse_prefix_expression()?;
+                ast::Expression::Prefix(prefix_expr)
+            }
             _ => panic!("Could not parse token {}", token_type.to_string()),
         };
         Ok(expression)
@@ -174,6 +178,23 @@ impl Parser<'_> {
         self.next_token();
         Ok(ast::ExpressionStatement {
             expression: expression,
+        })
+    }
+
+    fn parse_prefix_expression(&mut self) -> ParserResult<ast::PrefixExpression> {
+        let operator: ast::PrefixTokenOperator = match self.cur_token {
+            Token::Bang => Ok(ast::PrefixTokenOperator::Bang),
+            Token::Minus => Ok(ast::PrefixTokenOperator::Minus),
+            _ => Err(format!(
+                "Expected prefix operator, got {:?}",
+                self.cur_token
+            )),
+        }?;
+        self.next_token();
+        let right = self.parse_expression(Precedence::PREFIX)?;
+        Ok(ast::PrefixExpression {
+            operator: operator,
+            right: Box::new(right),
         })
     }
 }

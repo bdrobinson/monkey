@@ -79,4 +79,35 @@ mod test {
             ]
         );
     }
+
+    #[test]
+    fn test_prefix_expression() {
+        let input = "
+            -3;
+            !whatever;
+        ";
+        let program = read_program(input);
+        assert_eq!(program.statements.len(), 2);
+        assert_eq!(
+            program.statements,
+            vec![
+                ast::Statement::Expression(ast::ExpressionStatement {
+                    expression: ast::Expression::Prefix(ast::PrefixExpression {
+                        operator: ast::PrefixTokenOperator::Minus,
+                        right: Box::new(ast::Expression::IntegerLiteral(
+                            ast::IntegerLiteralExpression { value: 3 }
+                        )),
+                    })
+                }),
+                ast::Statement::Expression(ast::ExpressionStatement {
+                    expression: ast::Expression::Prefix(ast::PrefixExpression {
+                        operator: ast::PrefixTokenOperator::Bang,
+                        right: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
+                            value: String::from("whatever")
+                        })),
+                    })
+                })
+            ],
+        )
+    }
 }
