@@ -93,7 +93,7 @@ mod test {
             vec![
                 ast::Statement::Expression(ast::ExpressionStatement {
                     expression: ast::Expression::Prefix(ast::PrefixExpression {
-                        operator: ast::PrefixTokenOperator::Minus,
+                        operator: ast::PrefixOperator::Minus,
                         right: Box::new(ast::Expression::IntegerLiteral(
                             ast::IntegerLiteralExpression { value: 3 }
                         )),
@@ -101,7 +101,7 @@ mod test {
                 }),
                 ast::Statement::Expression(ast::ExpressionStatement {
                     expression: ast::Expression::Prefix(ast::PrefixExpression {
-                        operator: ast::PrefixTokenOperator::Bang,
+                        operator: ast::PrefixOperator::Bang,
                         right: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
                             value: String::from("whatever")
                         })),

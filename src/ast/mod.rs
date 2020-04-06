@@ -15,6 +15,7 @@ pub enum Expression {
     Identifier(IdentifierExpression),
     IntegerLiteral(IntegerLiteralExpression),
     Prefix(PrefixExpression),
+    Infix(InfixExpression),
 }
 
 #[derive(Debug, PartialEq)]
@@ -44,15 +45,34 @@ pub struct IntegerLiteralExpression {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum PrefixTokenOperator {
+pub enum PrefixOperator {
     Bang,
     Minus,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct PrefixExpression {
-    pub operator: PrefixTokenOperator,
+    pub operator: PrefixOperator,
     pub right: Box<Expression>,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum InfixOperator {
+    Plus,
+    Minus,
+    Multiply,
+    Divide,
+    Gt,
+    Lt,
+    Eq,
+    NotEq,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct InfixExpression {
+    pub operator: InfixOperator,
+    pub right: Box<Expression>,
+    pub left: Box<Expression>,
 }
 
 #[derive(Debug, PartialEq)]

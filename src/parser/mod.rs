@@ -13,17 +13,23 @@ type InfixParseFn = fn(ast::Expression) -> ast::Expression;
 #[derive(Debug, PartialOrd, PartialEq)]
 enum Precedence {
     LOWEST,
-    EQUALS,  // == LESSGREATER // > or <
-    SUM,     // +
-    PRODUCT, // *
-    PREFIX,  // -X or !X
-    CALL,    // myFunction(X)
+    EQUALS,      // ==
+    LESSGREATER, // > or <
+    SUM,         // +
+    PRODUCT,     // *
+    PREFIX,      // -X or !X
+    CALL,        // myFunction(X)
 }
 
 pub struct Parser<'a> {
     lexer: &'a mut lexer::Lexer,
     cur_token: Token,
     peek_token: Token,
+}
+
+struct ParsedInfix {
+    right: ast::Expression,
+    operator: ast::InfixOperator,
 }
 
 impl Parser<'_> {
@@ -37,23 +43,22 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_prefix(&mut self, token_type: &TokenType) -> ParserResult<ast::Expression> {
-        let expression: ast::Expression = match token_type {
-            TokenType::Ident => {
-                let ident = self.parse_identifier()?;
-                ast::Expression::Identifier(ident)
-            }
-            TokenType::Int => {
-                let int = self.parse_integer_literal()?;
-                ast::Expression::IntegerLiteral(int)
-            }
-            TokenType::Bang | TokenType::Minus => {
-                let prefix_expr = self.parse_prefix_expression()?;
-                ast::Expression::Prefix(prefix_expr)
-            }
-            _ => panic!("Could not parse token {}", token_type.to_string()),
-        };
-        Ok(expression)
+    fn parse_prefix(&mut self, token_type: &TokenType) -> Option<ParserResult<ast::Expression>> {
+        match token_type {
+            TokenType::Ident => Some(
+                self.parse_identifier()
+                    .map(|i| ast::Expression::Identifier(i)),
+            ),
+            TokenType::Int => Some(
+                self.parse_integer_literal()
+                    .map(|i| ast::Expression::IntegerLiteral(i)),
+            ),
+            TokenType::Bang | TokenType::Minus => Some(
+                self.parse_prefix_expression()
+                    .map(|i| ast::Expression::Prefix(i)),
+            ),
+            _ => None,
+        }
     }
 
     fn next_token(&mut self) {
@@ -167,7 +172,27 @@ impl Parser<'_> {
 
     fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<ast::Expression> {
         let token_type = &self.cur_token.token_type();
-        let left_exp = self.parse_prefix(token_type)?;
+        let prefix_left_exp = self.parse_prefix(token_type).ok_or(format!(
+            "No prefix parse function was defined for token {:?}",
+            token_type.to_string(),
+        ))??;
+
+        let mut left_exp = prefix_left_exp;
+
+        while (self.peek_token.token_type() != TokenType::Semicolon)
+            && (precedence < self.peek_precedence())
+        {
+            if let Some(parsed_infix_result) = self.parse_infix_expression() {
+                let parsed_infix = parsed_infix_result?;
+                left_exp = ast::Expression::Infix(ast::InfixExpression {
+                    left: Box::new(left_exp),
+                    operator: parsed_infix.operator,
+                    right: Box::new(parsed_infix.right),
+                });
+            } else {
+                return Ok(left_exp);
+            }
+        }
         Ok(left_exp)
     }
 
@@ -182,9 +207,9 @@ impl Parser<'_> {
     }
 
     fn parse_prefix_expression(&mut self) -> ParserResult<ast::PrefixExpression> {
-        let operator: ast::PrefixTokenOperator = match self.cur_token {
-            Token::Bang => Ok(ast::PrefixTokenOperator::Bang),
-            Token::Minus => Ok(ast::PrefixTokenOperator::Minus),
+        let operator: ast::PrefixOperator = match self.cur_token {
+            Token::Bang => Ok(ast::PrefixOperator::Bang),
+            Token::Minus => Ok(ast::PrefixOperator::Minus),
             _ => Err(format!(
                 "Expected prefix operator, got {:?}",
                 self.cur_token
@@ -197,6 +222,35 @@ impl Parser<'_> {
             right: Box::new(right),
         })
     }
+
+    fn parse_infix_expression(&mut self) -> Option<ParserResult<ParsedInfix>> {
+        let precedence = self.cur_precedence();
+        self.next_token();
+        let operator = match self.cur_token {
+            Token::Plus => Some(ast::InfixOperator::Plus),
+            Token::Minus => Some(ast::InfixOperator::Minus),
+            Token::Asterisk => Some(ast::InfixOperator::Multiply),
+            Token::Slash => Some(ast::InfixOperator::Divide),
+            Token::Gt => Some(ast::InfixOperator::Gt),
+            Token::Lt => Some(ast::InfixOperator::Lt),
+            Token::Eq => Some(ast::InfixOperator::Eq),
+            Token::NotEq => Some(ast::InfixOperator::NotEq),
+            _ => None,
+        }?;
+        self.next_token();
+        Some(self.parse_expression(precedence).map(|right| ParsedInfix {
+            operator: operator,
+            right: right,
+        }))
+    }
+
+    fn cur_precedence(&self) -> Precedence {
+        precedence_for_token_type(&self.cur_token.token_type())
+    }
+
+    fn peek_precedence(&self) -> Precedence {
+        precedence_for_token_type(&self.peek_token.token_type())
+    }
 }
 
 fn parser_err<T>(expected_type: TokenType, actual: &Token) -> ParserResult<T> {
@@ -205,4 +259,14 @@ fn parser_err<T>(expected_type: TokenType, actual: &Token) -> ParserResult<T> {
         expected_type.to_string(),
         actual
     ))
+}
+
+fn precedence_for_token_type(token_type: &TokenType) -> Precedence {
+    match token_type {
+        TokenType::Eq | TokenType::NotEq => Precedence::EQUALS,
+        TokenType::Lt | TokenType::Gt => Precedence::LESSGREATER,
+        TokenType::Plus | TokenType::Minus => Precedence::SUM,
+        TokenType::Slash | TokenType::Asterisk => Precedence::PRODUCT,
+        _ => Precedence::LOWEST,
+    }
 }
