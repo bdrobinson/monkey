@@ -1,3 +1,5 @@
+use std::fmt;
+
 pub fn token_from_word(literal: &String) -> Option<Token> {
     match literal.as_str() {
         "fn" => Some(Token::Function),
@@ -107,9 +109,9 @@ pub enum TokenType {
     NotEq,
 }
 
-impl TokenType {
-    pub fn to_string(&self) -> &'static str {
-        match self {
+impl fmt::Display for TokenType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let string = match self {
             TokenType::Illegal => "Illegal",
             TokenType::Eof => "Eof",
             TokenType::Ident => "Ident",
@@ -137,6 +139,7 @@ impl TokenType {
             TokenType::False => "False",
             TokenType::Eq => "Eq",
             TokenType::NotEq => "NotEq",
-        }
+        };
+        write!(f, "{}", string)
     }
 }

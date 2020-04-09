@@ -168,7 +168,7 @@ impl Parser<'_> {
             // TokenType::LParen => self.parse_grouped_expression(),
             _ => Err(format!(
                 "Could not find prefix parser for token type {}",
-                self.cur_token.token_type().to_string()
+                self.cur_token.token_type()
             )),
         }?;
 
@@ -270,11 +270,7 @@ impl Parser<'_> {
 }
 
 fn parser_err<T>(expected_type: TokenType, actual: &Token) -> ParserResult<T> {
-    Err(format!(
-        "Expected {}, got {:?}",
-        expected_type.to_string(),
-        actual
-    ))
+    Err(format!("Expected {}, got {:?}", expected_type, actual))
 }
 
 fn precedence_for_token_type(token_type: &TokenType) -> Precedence {
