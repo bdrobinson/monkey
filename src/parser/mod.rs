@@ -7,9 +7,6 @@ use crate::{
 
 type ParserResult<T> = Result<T, String>;
 
-type PrefixParseFn = fn() -> ast::Expression;
-type InfixParseFn = fn(ast::Expression) -> ast::Expression;
-
 #[derive(Debug, PartialOrd, PartialEq)]
 enum Precedence {
     LOWEST,
@@ -40,24 +37,6 @@ impl Parser<'_> {
             lexer: lexer,
             cur_token: first_token,
             peek_token: second_token,
-        }
-    }
-
-    fn parse_prefix(&mut self, token_type: &TokenType) -> Option<ParserResult<ast::Expression>> {
-        match token_type {
-            TokenType::Ident => Some(
-                self.parse_identifier()
-                    .map(|i| ast::Expression::Identifier(i)),
-            ),
-            TokenType::Int => Some(
-                self.parse_integer_literal()
-                    .map(|i| ast::Expression::IntegerLiteral(i)),
-            ),
-            TokenType::Bang | TokenType::Minus => Some(
-                self.parse_prefix_expression()
-                    .map(|i| ast::Expression::Prefix(i)),
-            ),
-            _ => None,
         }
     }
 
@@ -170,18 +149,33 @@ impl Parser<'_> {
         Ok(ast::LetStatement { name: identifier })
     }
 
-    fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<ast::Expression> {
-        let token_type = &self.cur_token.token_type();
-        let prefix_left_exp = self.parse_prefix(token_type).ok_or(format!(
-            "No prefix parse function was defined for token {:?}",
-            token_type.to_string(),
-        ))??;
+    // let thing  = one + 6;
 
-        let mut left_exp = prefix_left_exp;
+    fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<ast::Expression> {
+        let mut left_exp = match self.cur_token.token_type() {
+            TokenType::Ident => self
+                .parse_identifier()
+                .map(|i| ast::Expression::Identifier(i)),
+            TokenType::Int => self
+                .parse_integer_literal()
+                .map(|i| ast::Expression::IntegerLiteral(i)),
+            TokenType::Bang | TokenType::Minus => self
+                .parse_prefix_expression()
+                .map(|i| ast::Expression::Prefix(i)),
+            TokenType::True | TokenType::False => self
+                .parse_boolean_expression()
+                .map(|i| ast::Expression::Boolean(i)),
+            // TokenType::LParen => self.parse_grouped_expression(),
+            _ => Err(format!(
+                "Could not find prefix parser for token type {}",
+                self.cur_token.token_type().to_string()
+            )),
+        }?;
 
         while (self.peek_token.token_type() != TokenType::Semicolon)
             && (precedence < self.peek_precedence())
         {
+            self.next_token();
             if let Some(parsed_infix_result) = self.parse_infix_expression() {
                 let parsed_infix = parsed_infix_result?;
                 left_exp = ast::Expression::Infix(ast::InfixExpression {
@@ -198,9 +192,11 @@ impl Parser<'_> {
 
     fn parse_expression_statement(&mut self) -> ParserResult<ast::ExpressionStatement> {
         let expression = self.parse_expression(Precedence::LOWEST)?;
-        self.assert_peek_token_type(TokenType::Semicolon)?;
-        // Consume the semicolon
-        self.next_token();
+
+        // Semicolons are optional at the end of expression statements to make REPL easier.
+        if let Token::Semicolon = self.peek_token {
+            self.next_token();
+        }
         Ok(ast::ExpressionStatement {
             expression: expression,
         })
@@ -225,7 +221,6 @@ impl Parser<'_> {
 
     fn parse_infix_expression(&mut self) -> Option<ParserResult<ParsedInfix>> {
         let precedence = self.cur_precedence();
-        self.next_token();
         let operator = match self.cur_token {
             Token::Plus => Some(ast::InfixOperator::Plus),
             Token::Minus => Some(ast::InfixOperator::Minus),
@@ -243,6 +238,27 @@ impl Parser<'_> {
             right: right,
         }))
     }
+
+    fn parse_boolean_expression(&mut self) -> ParserResult<ast::BooleanExpression> {
+        match self.cur_token {
+            Token::True => Ok(ast::BooleanExpression { value: true }),
+            Token::False => Ok(ast::BooleanExpression { value: false }),
+            _ => Err(String::from("Expected boolean token")),
+        }
+    }
+
+    // fn parse_grouped_expression(&mut self) -> ParserResult<Option<ast::Expression>> {
+    //     self.assert_cur_token_type(TokenType::LParen)?;
+    //     self.next_token();
+
+    //     let expression = self.parse_expression(Precedence::LOWEST)?;
+    //     if self.peek_token.token_type() != TokenType::RParen {
+    //         Ok(None)
+    //     } else {
+    //         self.next_token();
+    //         Ok(Some(expression))
+    //     }
+    // }
 
     fn cur_precedence(&self) -> Precedence {
         precedence_for_token_type(&self.cur_token.token_type())

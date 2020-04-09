@@ -5,3 +5,4 @@ authors = ["Ben Robinson <ben@joinfoodchain.com>"]
 edition = "2018"
 
 [dependencies]
+pretty_assertions = "0.6.1"

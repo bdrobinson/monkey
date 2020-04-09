@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, PartialEq)]
 pub enum Node {
     Program(Program),
@@ -16,6 +18,19 @@ pub enum Expression {
     IntegerLiteral(IntegerLiteralExpression),
     Prefix(PrefixExpression),
     Infix(InfixExpression),
+    Boolean(BooleanExpression),
+}
+impl fmt::Display for Expression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let string_repr: String = match self {
+            Expression::Identifier(exp) => exp.value.clone(),
+            Expression::IntegerLiteral(exp) => exp.value.to_string(),
+            Expression::Prefix(exp) => format!("({}{})", exp.operator, exp.right),
+            Expression::Infix(exp) => format!("({} {} {})", exp.left, exp.operator, exp.right),
+            Expression::Boolean(exp) => exp.value.to_string(),
+        };
+        write!(f, "{}", string_repr)
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -50,6 +65,16 @@ pub enum PrefixOperator {
     Minus,
 }
 
+impl fmt::Display for PrefixOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let string = match self {
+            PrefixOperator::Bang => "!",
+            PrefixOperator::Minus => "-",
+        };
+        write!(f, "{}", string)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct PrefixExpression {
     pub operator: PrefixOperator,
@@ -68,11 +93,32 @@ pub enum InfixOperator {
     NotEq,
 }
 
+impl fmt::Display for InfixOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let string = match self {
+            InfixOperator::Plus => "+",
+            InfixOperator::Minus => "-",
+            InfixOperator::Multiply => "*",
+            InfixOperator::Divide => "/",
+            InfixOperator::Gt => ">",
+            InfixOperator::Lt => "<",
+            InfixOperator::Eq => "==",
+            InfixOperator::NotEq => "!=",
+        };
+        write!(f, "{}", string)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct InfixExpression {
+    pub left: Box<Expression>,
     pub operator: InfixOperator,
     pub right: Box<Expression>,
-    pub left: Box<Expression>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct BooleanExpression {
+    pub value: bool,
 }
 
 #[derive(Debug, PartialEq)]
