@@ -198,5 +198,7 @@ mod test {
         run_paren_infix_test("a * b * c", "((a * b) * c)");
         run_paren_infix_test("a * b / c", "(a * (b / c))");
         run_paren_infix_test("a + b / c", "(a + (b / c))");
+        run_paren_infix_test("(a + b) / c", "((a + b) / c)");
+        run_paren_infix_test("a + ((b + c) + d)", "(a + ((b + c) + d))");
     }
 }

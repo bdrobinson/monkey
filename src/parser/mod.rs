@@ -151,8 +151,6 @@ impl Parser<'_> {
         Ok(ast::LetStatement { name: identifier })
     }
 
-    // let thing  = one + 6;
-
     fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<ast::Expression> {
         let mut left_exp = match self.cur_token.token_type() {
             TokenType::Ident => self
@@ -167,7 +165,7 @@ impl Parser<'_> {
             TokenType::True | TokenType::False => self
                 .parse_boolean_expression()
                 .map(|i| ast::Expression::Boolean(i)),
-            // TokenType::LParen => self.parse_grouped_expression(),
+            TokenType::LParen => self.parse_grouped_expression(),
             _ => Err(format!(
                 "Could not find prefix parser for token type {}",
                 self.cur_token.token_type()
@@ -249,18 +247,15 @@ impl Parser<'_> {
         }
     }
 
-    // fn parse_grouped_expression(&mut self) -> ParserResult<Option<ast::Expression>> {
-    //     self.assert_cur_token_type(TokenType::LParen)?;
-    //     self.next_token();
+    fn parse_grouped_expression(&mut self) -> ParserResult<ast::Expression> {
+        self.assert_cur_token_type(TokenType::LParen)?;
+        self.next_token();
 
-    //     let expression = self.parse_expression(Precedence::LOWEST)?;
-    //     if self.peek_token.token_type() != TokenType::RParen {
-    //         Ok(None)
-    //     } else {
-    //         self.next_token();
-    //         Ok(Some(expression))
-    //     }
-    // }
+        let expression = self.parse_expression(Precedence::LOWEST)?;
+        self.next_token();
+        self.assert_cur_token_type(TokenType::RParen)?;
+        Ok(expression)
+    }
 
     fn cur_precedence(&self) -> Precedence {
         precedence_for_token_type(&self.cur_token.token_type())
