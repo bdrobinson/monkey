@@ -194,9 +194,9 @@ mod test {
         run_paren_infix_test("-a * b", "((-a) * b)");
         run_paren_infix_test("!-a", "(!(-a))");
         run_paren_infix_test("a + b + c", "((a + b) + c)");
-        run_paren_infix_test("a + b - c", "((a + b) - c)");
+        run_paren_infix_test("a - b + c", "(a - (b + c))");
         run_paren_infix_test("a * b * c", "((a * b) * c)");
-        run_paren_infix_test("a * b / c", "((a * b) / c)");
+        run_paren_infix_test("a * b / c", "(a * (b / c))");
         run_paren_infix_test("a + b / c", "(a + (b / c))");
     }
 }

@@ -12,8 +12,10 @@ enum Precedence {
     LOWEST,
     EQUALS,      // ==
     LESSGREATER, // > or <
+    MINUS,       // -
     SUM,         // +
     PRODUCT,     // *
+    DIVIDE,      // /
     PREFIX,      // -X or !X
     CALL,        // myFunction(X)
 }
@@ -277,8 +279,10 @@ fn precedence_for_token_type(token_type: &TokenType) -> Precedence {
     match token_type {
         TokenType::Eq | TokenType::NotEq => Precedence::EQUALS,
         TokenType::Lt | TokenType::Gt => Precedence::LESSGREATER,
-        TokenType::Plus | TokenType::Minus => Precedence::SUM,
-        TokenType::Slash | TokenType::Asterisk => Precedence::PRODUCT,
+        TokenType::Plus => Precedence::SUM,
+        TokenType::Minus => Precedence::MINUS,
+        TokenType::Slash => Precedence::DIVIDE,
+        TokenType::Asterisk => Precedence::PRODUCT,
         _ => Precedence::LOWEST,
     }
 }
