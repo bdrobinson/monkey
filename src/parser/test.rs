@@ -250,4 +250,62 @@ mod test {
             })
         )
     }
+
+    #[test]
+    fn test_fn_literal() {
+        let input = "
+        fn (x, y) {
+            x + y;
+        }
+        fn (x) {
+            4;
+        }
+        fn () {
+            3;
+        }";
+        let program = read_program(input);
+        assert_eq!(
+            program.statements,
+            vec!(
+                ast::Statement::Expression {
+                    expression: ast::Expression::FnLiteral {
+                        param_names: vec!(String::from("x"), String::from("y")),
+                        body: ast::BlockStatement {
+                            statements: vec!(ast::Statement::Expression {
+                                expression: ast::Expression::Infix {
+                                    left: Box::new(ast::Expression::Identifier {
+                                        value: String::from("x")
+                                    }),
+                                    operator: ast::InfixOperator::Plus,
+                                    right: Box::new(ast::Expression::Identifier {
+                                        value: String::from("y")
+                                    }),
+                                }
+                            })
+                        }
+                    }
+                },
+                ast::Statement::Expression {
+                    expression: ast::Expression::FnLiteral {
+                        param_names: vec!(String::from("x")),
+                        body: ast::BlockStatement {
+                            statements: vec!(ast::Statement::Expression {
+                                expression: ast::Expression::IntegerLiteral { value: 4 }
+                            })
+                        }
+                    }
+                },
+                ast::Statement::Expression {
+                    expression: ast::Expression::FnLiteral {
+                        param_names: vec!(),
+                        body: ast::BlockStatement {
+                            statements: vec!(ast::Statement::Expression {
+                                expression: ast::Expression::IntegerLiteral { value: 3 },
+                            })
+                        }
+                    }
+                }
+            )
+        )
+    }
 }

@@ -69,11 +69,9 @@ impl Parser<'_> {
         r
     }
 
-    fn parse_identifier(&mut self) -> ParserResult<ast::Expression> {
+    fn parse_identifier(&mut self) -> ParserResult<String> {
         if let Token::Ident { literal } = &self.cur_token {
-            Ok(ast::Expression::Identifier {
-                value: literal.clone(),
-            })
+            Ok(literal.clone())
         } else {
             parser_err(TokenType::Ident, &self.cur_token)
         }
@@ -125,11 +123,7 @@ impl Parser<'_> {
 
         // Identifier should be next
         self.next_token();
-        let identifier_name = if let Token::Ident { literal } = &self.cur_token {
-            Ok(literal.clone())
-        } else {
-            parser_err(TokenType::Ident, &self.cur_token)
-        }?;
+        let identifier_name = self.parse_identifier()?;
 
         // Then assign
         self.next_token();
@@ -148,14 +142,46 @@ impl Parser<'_> {
         })
     }
 
+    fn parse_fn_literal(&mut self) -> ParserResult<ast::Expression> {
+        self.assert_cur_token_type(TokenType::Function)?;
+        self.next_token();
+
+        self.assert_cur_token_type(TokenType::LParen)?;
+        self.next_token();
+
+        let mut param_names: Vec<String> = vec![];
+        while self.cur_token.token_type() != TokenType::RParen {
+            let name = self.parse_identifier()?;
+            param_names.push(name);
+            self.next_token();
+
+            if self.cur_token.token_type() == TokenType::Comma {
+                self.next_token();
+            }
+        }
+
+        // Current token is now RParen
+        self.next_token();
+
+        let body = self.parse_block_statement()?;
+
+        Ok(ast::Expression::FnLiteral {
+            param_names: param_names,
+            body: body,
+        })
+    }
+
     fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<ast::Expression> {
-        let mut left_exp = match self.cur_token.token_type() {
-            TokenType::Ident => self.parse_identifier(),
+        let mut left_exp: ast::Expression = match self.cur_token.token_type() {
+            TokenType::Ident => self
+                .parse_identifier()
+                .map(|s| ast::Expression::Identifier { value: s }),
             TokenType::Int => self.parse_integer_literal(),
             TokenType::Bang | TokenType::Minus => self.parse_prefix_expression(),
             TokenType::True | TokenType::False => self.parse_boolean_expression(),
             TokenType::LParen => self.parse_grouped_expression(),
             TokenType::If => self.parse_if_expression(),
+            TokenType::Function => self.parse_fn_literal(),
             _ => Err(format!(
                 "An expression cannot start with token type {}",
                 self.cur_token.token_type()
