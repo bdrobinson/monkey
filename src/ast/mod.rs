@@ -29,8 +29,12 @@ pub enum Expression {
     },
     If {
         condition: Box<Expression>,
-        consequence: Box<BlockStatement>,
-        alternative: Option<Box<BlockStatement>>,
+        consequence: BlockStatement,
+        alternative: Option<BlockStatement>,
+    },
+    FnLiteral {
+        param_names: Vec<String>,
+        body: BlockStatement,
     },
 }
 impl fmt::Display for Expression {
@@ -50,6 +54,10 @@ impl fmt::Display for Expression {
                 consequence: _,
                 alternative: _,
             } => String::from("if expression"),
+            Expression::FnLiteral {
+                param_names: _,
+                body: _,
+            } => String::from("fn literal"),
         };
         write!(f, "{}", string_repr)
     }

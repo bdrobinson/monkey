@@ -211,8 +211,8 @@ impl Parser<'_> {
         };
         Ok(ast::Expression::If {
             condition: Box::new(condition),
-            consequence: Box::new(consequence),
-            alternative: alternative.map(|a| Box::new(a)),
+            consequence: consequence,
+            alternative: alternative,
         })
     }
 

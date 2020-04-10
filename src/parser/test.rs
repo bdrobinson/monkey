@@ -202,13 +202,13 @@ mod test {
                             value: String::from("y")
                         })
                     }),
-                    consequence: Box::new(ast::BlockStatement {
+                    consequence: ast::BlockStatement {
                         statements: vec!(ast::Statement::Expression {
                             expression: ast::Expression::Identifier {
                                 value: String::from("x")
                             }
                         })
-                    }),
+                    },
                     alternative: None,
                 }
             })
@@ -232,20 +232,20 @@ mod test {
                             value: String::from("y")
                         })
                     }),
-                    consequence: Box::new(ast::BlockStatement {
+                    consequence: ast::BlockStatement {
                         statements: vec!(ast::Statement::Expression {
                             expression: ast::Expression::Identifier {
                                 value: String::from("x")
                             }
                         })
-                    }),
-                    alternative: Some(Box::new(ast::BlockStatement {
+                    },
+                    alternative: Some(ast::BlockStatement {
                         statements: vec!(ast::Statement::Expression {
                             expression: ast::Expression::Identifier {
                                 value: String::from("y")
                             }
                         })
-                    })),
+                    }),
                 }
             })
         )
