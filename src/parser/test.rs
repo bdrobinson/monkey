@@ -201,4 +201,70 @@ mod test {
         run_paren_infix_test("(a + b) / c", "((a + b) / c)");
         run_paren_infix_test("a + ((b + c) + d)", "(a + ((b + c) + d))");
     }
+
+    #[test]
+    fn test_if_expression() {
+        let input = "if (x < y) { x }";
+        let program = read_program(input);
+        assert_eq!(
+            program.statements,
+            vec!(ast::Statement::Expression(ast::ExpressionStatement {
+                expression: ast::Expression::If(ast::IfExpression {
+                    condition: Box::new(ast::Expression::Infix(ast::InfixExpression {
+                        left: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
+                            value: String::from("x")
+                        })),
+                        operator: ast::InfixOperator::Lt,
+                        right: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
+                            value: String::from("y")
+                        }))
+                    })),
+                    consequence: Box::new(ast::BlockStatement {
+                        statements: vec!(ast::Statement::Expression(ast::ExpressionStatement {
+                            expression: ast::Expression::Identifier(ast::IdentifierExpression {
+                                value: String::from("x")
+                            })
+                        }))
+                    }),
+                    alternative: None,
+                })
+            }))
+        )
+    }
+
+    #[test]
+    fn test_if_else_expression() {
+        let input = "if (x < y) { x } else { y }";
+        let program = read_program(input);
+        assert_eq!(
+            program.statements,
+            vec!(ast::Statement::Expression(ast::ExpressionStatement {
+                expression: ast::Expression::If(ast::IfExpression {
+                    condition: Box::new(ast::Expression::Infix(ast::InfixExpression {
+                        left: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
+                            value: String::from("x")
+                        })),
+                        operator: ast::InfixOperator::Lt,
+                        right: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
+                            value: String::from("y")
+                        }))
+                    })),
+                    consequence: Box::new(ast::BlockStatement {
+                        statements: vec!(ast::Statement::Expression(ast::ExpressionStatement {
+                            expression: ast::Expression::Identifier(ast::IdentifierExpression {
+                                value: String::from("x")
+                            })
+                        }))
+                    }),
+                    alternative: Some(Box::new(ast::BlockStatement {
+                        statements: vec!(ast::Statement::Expression(ast::ExpressionStatement {
+                            expression: ast::Expression::Identifier(ast::IdentifierExpression {
+                                value: String::from("y")
+                            })
+                        }))
+                    })),
+                })
+            }))
+        )
+    }
 }

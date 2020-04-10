@@ -19,6 +19,7 @@ pub enum Expression {
     Prefix(PrefixExpression),
     Infix(InfixExpression),
     Boolean(BooleanExpression),
+    If(IfExpression),
 }
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -28,6 +29,7 @@ impl fmt::Display for Expression {
             Expression::Prefix(exp) => format!("({}{})", exp.operator, exp.right),
             Expression::Infix(exp) => format!("({} {} {})", exp.left, exp.operator, exp.right),
             Expression::Boolean(exp) => exp.value.to_string(),
+            Expression::If(exp) => String::from("if expression"),
         };
         write!(f, "{}", string_repr)
     }
@@ -35,6 +37,11 @@ impl fmt::Display for Expression {
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
+    pub statements: Vec<Statement>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct BlockStatement {
     pub statements: Vec<Statement>,
 }
 
@@ -57,6 +64,13 @@ pub struct IdentifierExpression {
 #[derive(Debug, PartialEq)]
 pub struct IntegerLiteralExpression {
     pub value: i64,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct IfExpression {
+    pub condition: Box<Expression>,
+    pub consequence: Box<BlockStatement>,
+    pub alternative: Option<Box<BlockStatement>>,
 }
 
 #[derive(Debug, PartialEq)]

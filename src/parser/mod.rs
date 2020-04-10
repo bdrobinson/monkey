@@ -166,6 +166,7 @@ impl Parser<'_> {
                 .parse_boolean_expression()
                 .map(|i| ast::Expression::Boolean(i)),
             TokenType::LParen => self.parse_grouped_expression(),
+            TokenType::If => self.parse_if_expression().map(|i| ast::Expression::If(i)),
             _ => Err(format!(
                 "An expression cannot start with token type {}",
                 self.cur_token.token_type()
@@ -195,6 +196,51 @@ impl Parser<'_> {
             }
         }
         Ok(left_exp)
+    }
+
+    fn parse_if_expression(&mut self) -> ParserResult<ast::IfExpression> {
+        self.assert_cur_token_type(TokenType::If)?;
+        self.next_token();
+
+        self.assert_cur_token_type(TokenType::LParen)?;
+        self.next_token();
+
+        let condition = self.parse_expression(Precedence::LOWEST)?;
+        self.next_token();
+
+        self.assert_cur_token_type(TokenType::RParen)?;
+        self.next_token();
+
+        let consequence = self.parse_block_statement()?;
+
+        let alternative = if Token::Else == self.peek_token {
+            self.next_token(); // now we're on the else
+            self.next_token(); // now we're on the start of the block statement
+            Some(self.parse_block_statement()?)
+        } else {
+            None
+        };
+        Ok(ast::IfExpression {
+            condition: Box::new(condition),
+            consequence: Box::new(consequence),
+            alternative: alternative.map(|a| Box::new(a)),
+        })
+    }
+
+    fn parse_block_statement(&mut self) -> ParserResult<ast::BlockStatement> {
+        self.assert_cur_token_type(TokenType::LBrace)?;
+        self.next_token();
+        // cur token is now either an RBrace or the start of an expression statement.
+
+        let mut statements: Vec<ast::Statement> = vec![];
+        while self.cur_token != Token::RBrace {
+            let statement = self.parse_statement()?;
+            statements.push(statement);
+            self.next_token();
+        }
+        Ok(ast::BlockStatement {
+            statements: statements,
+        })
     }
 
     fn parse_expression_statement(&mut self) -> ParserResult<ast::ExpressionStatement> {
