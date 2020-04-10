@@ -78,9 +78,9 @@ impl Parser<'_> {
         r
     }
 
-    fn parse_identifier(&mut self) -> ParserResult<ast::IdentifierExpression> {
+    fn parse_identifier(&mut self) -> ParserResult<ast::Expression> {
         if let Token::Ident { literal } = &self.cur_token {
-            Ok(ast::IdentifierExpression {
+            Ok(ast::Expression::Identifier {
                 value: literal.clone(),
             })
         } else {
@@ -88,11 +88,11 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_integer_literal(&mut self) -> ParserResult<ast::IntegerLiteralExpression> {
+    fn parse_integer_literal(&mut self) -> ParserResult<ast::Expression> {
         if let Token::Int { literal } = &self.cur_token {
             let parsed = literal.parse::<i64>().map_err(|_| "Could not parse int")?;
 
-            Ok(ast::IntegerLiteralExpression { value: parsed })
+            Ok(ast::Expression::IntegerLiteral { value: parsed })
         } else {
             parser_err(TokenType::Int, &self.cur_token)
         }
@@ -134,7 +134,11 @@ impl Parser<'_> {
 
         // Identifier should be next
         self.next_token();
-        let identifier = self.parse_identifier()?;
+        let identifier_name = if let Token::Ident { literal } = &self.cur_token {
+            Ok(literal.clone())
+        } else {
+            parser_err(TokenType::Ident, &self.cur_token)
+        }?;
 
         // Then assign
         self.next_token();
@@ -148,25 +152,19 @@ impl Parser<'_> {
         // Make sure it was terminated
         self.next_token();
         self.assert_cur_token_type(TokenType::Semicolon)?;
-        Ok(ast::LetStatement { name: identifier })
+        Ok(ast::LetStatement {
+            name: identifier_name,
+        })
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<ast::Expression> {
         let mut left_exp = match self.cur_token.token_type() {
-            TokenType::Ident => self
-                .parse_identifier()
-                .map(|i| ast::Expression::Identifier(i)),
-            TokenType::Int => self
-                .parse_integer_literal()
-                .map(|i| ast::Expression::IntegerLiteral(i)),
-            TokenType::Bang | TokenType::Minus => self
-                .parse_prefix_expression()
-                .map(|i| ast::Expression::Prefix(i)),
-            TokenType::True | TokenType::False => self
-                .parse_boolean_expression()
-                .map(|i| ast::Expression::Boolean(i)),
+            TokenType::Ident => self.parse_identifier(),
+            TokenType::Int => self.parse_integer_literal(),
+            TokenType::Bang | TokenType::Minus => self.parse_prefix_expression(),
+            TokenType::True | TokenType::False => self.parse_boolean_expression(),
             TokenType::LParen => self.parse_grouped_expression(),
-            TokenType::If => self.parse_if_expression().map(|i| ast::Expression::If(i)),
+            TokenType::If => self.parse_if_expression(),
             _ => Err(format!(
                 "An expression cannot start with token type {}",
                 self.cur_token.token_type()
@@ -185,11 +183,11 @@ impl Parser<'_> {
 
             if let Some(parsed_infix_result) = self.parse_infix_expression() {
                 let parsed_infix = parsed_infix_result?;
-                left_exp = ast::Expression::Infix(ast::InfixExpression {
+                left_exp = ast::Expression::Infix {
                     left: Box::new(left_exp),
                     operator: parsed_infix.operator,
                     right: Box::new(parsed_infix.right),
-                });
+                };
             } else {
                 // it wasn't an infix op – expression is done.
                 return Ok(left_exp);
@@ -198,7 +196,7 @@ impl Parser<'_> {
         Ok(left_exp)
     }
 
-    fn parse_if_expression(&mut self) -> ParserResult<ast::IfExpression> {
+    fn parse_if_expression(&mut self) -> ParserResult<ast::Expression> {
         self.assert_cur_token_type(TokenType::If)?;
         self.next_token();
 
@@ -220,7 +218,7 @@ impl Parser<'_> {
         } else {
             None
         };
-        Ok(ast::IfExpression {
+        Ok(ast::Expression::If {
             condition: Box::new(condition),
             consequence: Box::new(consequence),
             alternative: alternative.map(|a| Box::new(a)),
@@ -255,7 +253,7 @@ impl Parser<'_> {
         })
     }
 
-    fn parse_prefix_expression(&mut self) -> ParserResult<ast::PrefixExpression> {
+    fn parse_prefix_expression(&mut self) -> ParserResult<ast::Expression> {
         let operator: ast::PrefixOperator = match self.cur_token {
             Token::Bang => Ok(ast::PrefixOperator::Bang),
             Token::Minus => Ok(ast::PrefixOperator::Minus),
@@ -266,7 +264,7 @@ impl Parser<'_> {
         }?;
         self.next_token();
         let right = self.parse_expression(Precedence::PREFIX)?;
-        Ok(ast::PrefixExpression {
+        Ok(ast::Expression::Prefix {
             operator: operator,
             right: Box::new(right),
         })
@@ -292,10 +290,10 @@ impl Parser<'_> {
         }))
     }
 
-    fn parse_boolean_expression(&mut self) -> ParserResult<ast::BooleanExpression> {
+    fn parse_boolean_expression(&mut self) -> ParserResult<ast::Expression> {
         match self.cur_token {
-            Token::True => Ok(ast::BooleanExpression { value: true }),
-            Token::False => Ok(ast::BooleanExpression { value: false }),
+            Token::True => Ok(ast::Expression::Boolean { value: true }),
+            Token::False => Ok(ast::Expression::Boolean { value: false }),
             _ => Err(String::from("Expected boolean token")),
         }
     }

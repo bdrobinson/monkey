@@ -14,22 +14,47 @@ pub enum Statement {
 
 #[derive(Debug, PartialEq)]
 pub enum Expression {
-    Identifier(IdentifierExpression),
-    IntegerLiteral(IntegerLiteralExpression),
-    Prefix(PrefixExpression),
-    Infix(InfixExpression),
-    Boolean(BooleanExpression),
-    If(IfExpression),
+    Identifier {
+        value: String,
+    },
+    IntegerLiteral {
+        value: i64,
+    },
+    Prefix {
+        operator: PrefixOperator,
+        right: Box<Expression>,
+    },
+    Infix {
+        left: Box<Expression>,
+        operator: InfixOperator,
+        right: Box<Expression>,
+    },
+    Boolean {
+        value: bool,
+    },
+    If {
+        condition: Box<Expression>,
+        consequence: Box<BlockStatement>,
+        alternative: Option<Box<BlockStatement>>,
+    },
 }
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let string_repr: String = match self {
-            Expression::Identifier(exp) => exp.value.clone(),
-            Expression::IntegerLiteral(exp) => exp.value.to_string(),
-            Expression::Prefix(exp) => format!("({}{})", exp.operator, exp.right),
-            Expression::Infix(exp) => format!("({} {} {})", exp.left, exp.operator, exp.right),
-            Expression::Boolean(exp) => exp.value.to_string(),
-            Expression::If(exp) => String::from("if expression"),
+            Expression::Identifier { value } => value.clone(),
+            Expression::IntegerLiteral { value } => value.to_string(),
+            Expression::Prefix { operator, right } => format!("({}{})", operator, right),
+            Expression::Infix {
+                left,
+                operator,
+                right,
+            } => format!("({} {} {})", left, operator, right),
+            Expression::Boolean { value } => value.to_string(),
+            Expression::If {
+                condition,
+                consequence,
+                alternative,
+            } => String::from("if expression"),
         };
         write!(f, "{}", string_repr)
     }
@@ -47,30 +72,12 @@ pub struct BlockStatement {
 
 #[derive(Debug, PartialEq)]
 pub struct LetStatement {
-    pub name: IdentifierExpression,
-    // value: Expression,
+    pub name: String,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct ReturnStatement {
     // pub value: Expression,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct IdentifierExpression {
-    pub value: String,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct IntegerLiteralExpression {
-    pub value: i64,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct IfExpression {
-    pub condition: Box<Expression>,
-    pub consequence: Box<BlockStatement>,
-    pub alternative: Option<Box<BlockStatement>>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -87,12 +94,6 @@ impl fmt::Display for PrefixOperator {
         };
         write!(f, "{}", string)
     }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct PrefixExpression {
-    pub operator: PrefixOperator,
-    pub right: Box<Expression>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -121,18 +122,6 @@ impl fmt::Display for InfixOperator {
         };
         write!(f, "{}", string)
     }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct InfixExpression {
-    pub left: Box<Expression>,
-    pub operator: InfixOperator,
-    pub right: Box<Expression>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct BooleanExpression {
-    pub value: bool,
 }
 
 #[derive(Debug, PartialEq)]

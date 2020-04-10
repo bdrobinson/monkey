@@ -14,19 +14,13 @@ mod test {
 
         let expected: Vec<ast::Statement> = vec![
             ast::Statement::Let(ast::LetStatement {
-                name: ast::IdentifierExpression {
-                    value: String::from("x"),
-                },
+                name: String::from("x"),
             }),
             ast::Statement::Let(ast::LetStatement {
-                name: ast::IdentifierExpression {
-                    value: String::from("y"),
-                },
+                name: String::from("y"),
             }),
             ast::Statement::Let(ast::LetStatement {
-                name: ast::IdentifierExpression {
-                    value: String::from("foobar"),
-                },
+                name: String::from("foobar"),
             }),
         ];
 
@@ -68,14 +62,12 @@ mod test {
             program.statements,
             vec![
                 ast::Statement::Expression(ast::ExpressionStatement {
-                    expression: ast::Expression::Identifier(ast::IdentifierExpression {
+                    expression: ast::Expression::Identifier {
                         value: String::from("foobar")
-                    })
+                    }
                 }),
                 ast::Statement::Expression(ast::ExpressionStatement {
-                    expression: ast::Expression::IntegerLiteral(ast::IntegerLiteralExpression {
-                        value: 45
-                    })
+                    expression: ast::Expression::IntegerLiteral { value: 45 }
                 }),
             ]
         );
@@ -93,20 +85,18 @@ mod test {
             program.statements,
             vec![
                 ast::Statement::Expression(ast::ExpressionStatement {
-                    expression: ast::Expression::Prefix(ast::PrefixExpression {
+                    expression: ast::Expression::Prefix {
                         operator: ast::PrefixOperator::Minus,
-                        right: Box::new(ast::Expression::IntegerLiteral(
-                            ast::IntegerLiteralExpression { value: 3 }
-                        )),
-                    })
+                        right: Box::new(ast::Expression::IntegerLiteral { value: 3 }),
+                    }
                 }),
                 ast::Statement::Expression(ast::ExpressionStatement {
-                    expression: ast::Expression::Prefix(ast::PrefixExpression {
+                    expression: ast::Expression::Prefix {
                         operator: ast::PrefixOperator::Bang,
-                        right: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
+                        right: Box::new(ast::Expression::Identifier {
                             value: String::from("whatever")
-                        })),
-                    })
+                        }),
+                    }
                 })
             ],
         )
@@ -123,10 +113,10 @@ mod test {
             program.statements,
             vec![
                 ast::Statement::Expression(ast::ExpressionStatement {
-                    expression: ast::Expression::Boolean(ast::BooleanExpression { value: true })
+                    expression: ast::Expression::Boolean { value: true }
                 }),
                 ast::Statement::Expression(ast::ExpressionStatement {
-                    expression: ast::Expression::Boolean(ast::BooleanExpression { value: false })
+                    expression: ast::Expression::Boolean { value: false }
                 }),
             ]
         )
@@ -138,15 +128,11 @@ mod test {
         right: i64,
     ) -> ast::Statement {
         ast::Statement::Expression(ast::ExpressionStatement {
-            expression: ast::Expression::Infix(ast::InfixExpression {
-                left: Box::new(ast::Expression::IntegerLiteral(
-                    ast::IntegerLiteralExpression { value: left },
-                )),
+            expression: ast::Expression::Infix {
+                left: Box::new(ast::Expression::IntegerLiteral { value: left }),
                 operator: op,
-                right: Box::new(ast::Expression::IntegerLiteral(
-                    ast::IntegerLiteralExpression { value: right },
-                )),
-            }),
+                right: Box::new(ast::Expression::IntegerLiteral { value: right }),
+            },
         })
     }
 
@@ -209,25 +195,25 @@ mod test {
         assert_eq!(
             program.statements,
             vec!(ast::Statement::Expression(ast::ExpressionStatement {
-                expression: ast::Expression::If(ast::IfExpression {
-                    condition: Box::new(ast::Expression::Infix(ast::InfixExpression {
-                        left: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
+                expression: ast::Expression::If {
+                    condition: Box::new(ast::Expression::Infix {
+                        left: Box::new(ast::Expression::Identifier {
                             value: String::from("x")
-                        })),
+                        }),
                         operator: ast::InfixOperator::Lt,
-                        right: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
+                        right: Box::new(ast::Expression::Identifier {
                             value: String::from("y")
-                        }))
-                    })),
+                        })
+                    }),
                     consequence: Box::new(ast::BlockStatement {
                         statements: vec!(ast::Statement::Expression(ast::ExpressionStatement {
-                            expression: ast::Expression::Identifier(ast::IdentifierExpression {
+                            expression: ast::Expression::Identifier {
                                 value: String::from("x")
-                            })
+                            }
                         }))
                     }),
                     alternative: None,
-                })
+                }
             }))
         )
     }
@@ -239,31 +225,31 @@ mod test {
         assert_eq!(
             program.statements,
             vec!(ast::Statement::Expression(ast::ExpressionStatement {
-                expression: ast::Expression::If(ast::IfExpression {
-                    condition: Box::new(ast::Expression::Infix(ast::InfixExpression {
-                        left: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
+                expression: ast::Expression::If {
+                    condition: Box::new(ast::Expression::Infix {
+                        left: Box::new(ast::Expression::Identifier {
                             value: String::from("x")
-                        })),
+                        }),
                         operator: ast::InfixOperator::Lt,
-                        right: Box::new(ast::Expression::Identifier(ast::IdentifierExpression {
+                        right: Box::new(ast::Expression::Identifier {
                             value: String::from("y")
-                        }))
-                    })),
+                        })
+                    }),
                     consequence: Box::new(ast::BlockStatement {
                         statements: vec!(ast::Statement::Expression(ast::ExpressionStatement {
-                            expression: ast::Expression::Identifier(ast::IdentifierExpression {
+                            expression: ast::Expression::Identifier {
                                 value: String::from("x")
-                            })
+                            }
                         }))
                     }),
                     alternative: Some(Box::new(ast::BlockStatement {
                         statements: vec!(ast::Statement::Expression(ast::ExpressionStatement {
-                            expression: ast::Expression::Identifier(ast::IdentifierExpression {
+                            expression: ast::Expression::Identifier {
                                 value: String::from("y")
-                            })
+                            }
                         }))
                     })),
-                })
+                }
             }))
         )
     }
