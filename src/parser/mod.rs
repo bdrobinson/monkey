@@ -167,15 +167,21 @@ impl Parser<'_> {
                 .map(|i| ast::Expression::Boolean(i)),
             TokenType::LParen => self.parse_grouped_expression(),
             _ => Err(format!(
-                "Could not find prefix parser for token type {}",
+                "An expression cannot start with token type {}",
                 self.cur_token.token_type()
             )),
         }?;
 
+        // This algorithm can essentially iterate horizontally using
+        // while, or vertically using recursion.
+        // Horizontal: (((1 + 2) + 3) + 4)
+        // Vertical:   (1 + (2 + (3 + 4)))
         while (self.peek_token.token_type() != TokenType::Semicolon)
             && (precedence < self.peek_precedence())
         {
             self.next_token();
+            // cur token is a potential infix operator
+
             if let Some(parsed_infix_result) = self.parse_infix_expression() {
                 let parsed_infix = parsed_infix_result?;
                 left_exp = ast::Expression::Infix(ast::InfixExpression {
@@ -184,6 +190,7 @@ impl Parser<'_> {
                     right: Box::new(parsed_infix.right),
                 });
             } else {
+                // it wasn't an infix op – expression is done.
                 return Ok(left_exp);
             }
         }
