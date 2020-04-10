@@ -1,15 +1,10 @@
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
-pub enum Node {
-    Program(Program),
-}
-
-#[derive(Debug, PartialEq)]
 pub enum Statement {
-    Let(LetStatement),
-    Return(ReturnStatement),
-    Expression(ExpressionStatement),
+    Let { name: String },
+    Return {},
+    Expression { expression: Expression },
 }
 
 #[derive(Debug, PartialEq)]
@@ -51,9 +46,9 @@ impl fmt::Display for Expression {
             } => format!("({} {} {})", left, operator, right),
             Expression::Boolean { value } => value.to_string(),
             Expression::If {
-                condition,
-                consequence,
-                alternative,
+                condition: _,
+                consequence: _,
+                alternative: _,
             } => String::from("if expression"),
         };
         write!(f, "{}", string_repr)
@@ -68,16 +63,6 @@ pub struct Program {
 #[derive(Debug, PartialEq)]
 pub struct BlockStatement {
     pub statements: Vec<Statement>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct LetStatement {
-    pub name: String,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ReturnStatement {
-    // pub value: Expression,
 }
 
 #[derive(Debug, PartialEq)]
@@ -122,9 +107,4 @@ impl fmt::Display for InfixOperator {
         };
         write!(f, "{}", string)
     }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ExpressionStatement {
-    pub expression: Expression,
 }

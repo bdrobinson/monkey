@@ -13,15 +13,15 @@ mod test {
         assert_eq!(program.statements.len(), 3);
 
         let expected: Vec<ast::Statement> = vec![
-            ast::Statement::Let(ast::LetStatement {
+            ast::Statement::Let {
                 name: String::from("x"),
-            }),
-            ast::Statement::Let(ast::LetStatement {
+            },
+            ast::Statement::Let {
                 name: String::from("y"),
-            }),
-            ast::Statement::Let(ast::LetStatement {
+            },
+            ast::Statement::Let {
                 name: String::from("foobar"),
-            }),
+            },
         ];
 
         assert_eq!(program.statements, expected);
@@ -37,10 +37,7 @@ mod test {
         assert_eq!(program.statements.len(), 2);
         assert_eq!(
             program.statements,
-            vec![
-                ast::Statement::Return(ast::ReturnStatement {}),
-                ast::Statement::Return(ast::ReturnStatement {}),
-            ]
+            vec![ast::Statement::Return {}, ast::Statement::Return {},]
         )
     }
     fn read_program(input: &'static str) -> ast::Program {
@@ -61,14 +58,14 @@ mod test {
         assert_eq!(
             program.statements,
             vec![
-                ast::Statement::Expression(ast::ExpressionStatement {
+                ast::Statement::Expression {
                     expression: ast::Expression::Identifier {
                         value: String::from("foobar")
                     }
-                }),
-                ast::Statement::Expression(ast::ExpressionStatement {
+                },
+                ast::Statement::Expression {
                     expression: ast::Expression::IntegerLiteral { value: 45 }
-                }),
+                },
             ]
         );
     }
@@ -84,20 +81,20 @@ mod test {
         assert_eq!(
             program.statements,
             vec![
-                ast::Statement::Expression(ast::ExpressionStatement {
+                ast::Statement::Expression {
                     expression: ast::Expression::Prefix {
                         operator: ast::PrefixOperator::Minus,
                         right: Box::new(ast::Expression::IntegerLiteral { value: 3 }),
                     }
-                }),
-                ast::Statement::Expression(ast::ExpressionStatement {
+                },
+                ast::Statement::Expression {
                     expression: ast::Expression::Prefix {
                         operator: ast::PrefixOperator::Bang,
                         right: Box::new(ast::Expression::Identifier {
                             value: String::from("whatever")
                         }),
                     }
-                })
+                },
             ],
         )
     }
@@ -112,12 +109,12 @@ mod test {
         assert_eq!(
             program.statements,
             vec![
-                ast::Statement::Expression(ast::ExpressionStatement {
+                ast::Statement::Expression {
                     expression: ast::Expression::Boolean { value: true }
-                }),
-                ast::Statement::Expression(ast::ExpressionStatement {
+                },
+                ast::Statement::Expression {
                     expression: ast::Expression::Boolean { value: false }
-                }),
+                },
             ]
         )
     }
@@ -127,23 +124,23 @@ mod test {
         op: ast::InfixOperator,
         right: i64,
     ) -> ast::Statement {
-        ast::Statement::Expression(ast::ExpressionStatement {
+        ast::Statement::Expression {
             expression: ast::Expression::Infix {
                 left: Box::new(ast::Expression::IntegerLiteral { value: left }),
                 operator: op,
                 right: Box::new(ast::Expression::IntegerLiteral { value: right }),
             },
-        })
+        }
     }
 
     fn run_paren_infix_test(no_parens: &'static str, with_parens: &'static str) {
         let program_noparens = read_program(no_parens);
         let first_statement = program_noparens.statements.iter().nth(0).unwrap();
-        let expr_st = match first_statement {
-            ast::Statement::Expression(ex) => ex,
+        let expression = match first_statement {
+            ast::Statement::Expression { expression } => expression,
             _ => panic!("Expected expression statement"),
         };
-        assert_eq!(expr_st.expression.to_string(), with_parens);
+        assert_eq!(expression.to_string(), with_parens);
     }
 
     #[test]
@@ -194,7 +191,7 @@ mod test {
         let program = read_program(input);
         assert_eq!(
             program.statements,
-            vec!(ast::Statement::Expression(ast::ExpressionStatement {
+            vec!(ast::Statement::Expression {
                 expression: ast::Expression::If {
                     condition: Box::new(ast::Expression::Infix {
                         left: Box::new(ast::Expression::Identifier {
@@ -206,15 +203,15 @@ mod test {
                         })
                     }),
                     consequence: Box::new(ast::BlockStatement {
-                        statements: vec!(ast::Statement::Expression(ast::ExpressionStatement {
+                        statements: vec!(ast::Statement::Expression {
                             expression: ast::Expression::Identifier {
                                 value: String::from("x")
                             }
-                        }))
+                        })
                     }),
                     alternative: None,
                 }
-            }))
+            })
         )
     }
 
@@ -224,7 +221,7 @@ mod test {
         let program = read_program(input);
         assert_eq!(
             program.statements,
-            vec!(ast::Statement::Expression(ast::ExpressionStatement {
+            vec!(ast::Statement::Expression {
                 expression: ast::Expression::If {
                     condition: Box::new(ast::Expression::Infix {
                         left: Box::new(ast::Expression::Identifier {
@@ -236,21 +233,21 @@ mod test {
                         })
                     }),
                     consequence: Box::new(ast::BlockStatement {
-                        statements: vec!(ast::Statement::Expression(ast::ExpressionStatement {
+                        statements: vec!(ast::Statement::Expression {
                             expression: ast::Expression::Identifier {
                                 value: String::from("x")
                             }
-                        }))
+                        })
                     }),
                     alternative: Some(Box::new(ast::BlockStatement {
-                        statements: vec!(ast::Statement::Expression(ast::ExpressionStatement {
+                        statements: vec!(ast::Statement::Expression {
                             expression: ast::Expression::Identifier {
                                 value: String::from("y")
                             }
-                        }))
+                        })
                     })),
                 }
-            }))
+            })
         )
     }
 }

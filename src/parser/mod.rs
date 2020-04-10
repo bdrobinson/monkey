@@ -62,18 +62,9 @@ impl Parser<'_> {
 
     fn parse_statement(&mut self) -> ParserResult<ast::Statement> {
         let r: ParserResult<ast::Statement> = match &self.cur_token {
-            Token::Let => {
-                let let_statement = self.parse_let_statement()?;
-                Ok(ast::Statement::Let(let_statement))
-            }
-            Token::Return => {
-                let return_statement = self.parse_return_statement()?;
-                Ok(ast::Statement::Return(return_statement))
-            }
-            _ => {
-                let expression = self.parse_expression_statement()?;
-                Ok(ast::Statement::Expression(expression))
-            }
+            Token::Let => self.parse_let_statement(),
+            Token::Return => self.parse_return_statement(),
+            _ => self.parse_expression_statement(),
         };
         r
     }
@@ -98,7 +89,7 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_return_statement(&mut self) -> ParserResult<ast::ReturnStatement> {
+    fn parse_return_statement(&mut self) -> ParserResult<ast::Statement> {
         self.assert_cur_token_type(TokenType::Return)?;
 
         // Next we expect an expression
@@ -109,7 +100,7 @@ impl Parser<'_> {
         self.next_token();
         self.assert_cur_token_type(TokenType::Semicolon)?;
 
-        Ok(ast::ReturnStatement {})
+        Ok(ast::Statement::Return {})
     }
 
     fn assert_cur_token_type(&self, expected: TokenType) -> Result<(), String> {
@@ -128,7 +119,7 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_let_statement(&mut self) -> ParserResult<ast::LetStatement> {
+    fn parse_let_statement(&mut self) -> ParserResult<ast::Statement> {
         // Check we're starting with a Let
         self.assert_cur_token_type(TokenType::Let)?;
 
@@ -152,7 +143,7 @@ impl Parser<'_> {
         // Make sure it was terminated
         self.next_token();
         self.assert_cur_token_type(TokenType::Semicolon)?;
-        Ok(ast::LetStatement {
+        Ok(ast::Statement::Let {
             name: identifier_name,
         })
     }
@@ -241,14 +232,14 @@ impl Parser<'_> {
         })
     }
 
-    fn parse_expression_statement(&mut self) -> ParserResult<ast::ExpressionStatement> {
+    fn parse_expression_statement(&mut self) -> ParserResult<ast::Statement> {
         let expression = self.parse_expression(Precedence::LOWEST)?;
 
         // Semicolons are optional at the end of expression statements to make REPL easier.
         if let Token::Semicolon = self.peek_token {
             self.next_token();
         }
-        Ok(ast::ExpressionStatement {
+        Ok(ast::Statement::Expression {
             expression: expression,
         })
     }
