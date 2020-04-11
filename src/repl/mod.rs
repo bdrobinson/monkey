@@ -18,7 +18,7 @@ pub fn start(input: &mut dyn io::BufRead, output: &mut dyn io::Write) -> Result<
         let program = parser.parse_program();
         match program {
             Ok(program) => {
-                output.write(format!("{:?}\n", program).as_bytes())?;
+                output.write(format!("{}\n", program).as_bytes())?;
             }
             Err(message) => {
                 output.write(format!("Parsing failed: {}\n", message).as_bytes())?;

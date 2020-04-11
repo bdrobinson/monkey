@@ -1,3 +1,4 @@
+use core::fmt::Display;
 use std::fmt;
 
 #[derive(Debug, PartialEq)]
@@ -5,6 +6,23 @@ pub enum Statement {
     Let { name: String, right: Expression },
     Return { value: Expression },
     Expression { expression: Expression },
+}
+
+impl Display for Statement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        match self {
+            Statement::Let { name, right } => {
+                write!(f, "let {} = {};", name, right)?;
+            }
+            Statement::Return { value } => {
+                write!(f, "return {};", value)?;
+            }
+            Statement::Expression { expression } => {
+                write!(f, "{};", expression)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -43,7 +61,7 @@ pub enum Expression {
 }
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let string_repr: String = match self {
+        let string_repr: String = match &self {
             Expression::Identifier { value } => value.clone(),
             Expression::IntegerLiteral { value } => value.to_string(),
             Expression::Prefix { operator, right } => format!("({}{})", operator, right),
@@ -53,19 +71,34 @@ impl fmt::Display for Expression {
                 right,
             } => format!("({} {} {})", left, operator, right),
             Expression::Boolean { value } => value.to_string(),
-            Expression::If {
-                condition: _,
-                consequence: _,
-                alternative: _,
-            } => String::from("if expression"),
-            Expression::FnLiteral {
-                param_names: _,
-                body: _,
-            } => String::from("fn literal"),
-            Expression::CallExpression {
-                function: _,
-                arguments: _,
-            } => String::from("call expr"),
+            &Expression::If {
+                condition,
+                consequence,
+                alternative,
+            } => format!(
+                "if ({}) {} {}",
+                condition,
+                consequence,
+                alternative
+                    .as_ref()
+                    .map(|a| format!("else {}", a))
+                    .unwrap_or(String::from(""))
+            ),
+            Expression::FnLiteral { param_names, body } => {
+                format!("fn({}) {}", param_names.join(", "), body)
+            }
+            &Expression::CallExpression {
+                function,
+                arguments,
+            } => format!(
+                "{}({})",
+                function,
+                arguments
+                    .iter()
+                    .map(|a| a.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
         };
         write!(f, "{}", string_repr)
     }
@@ -83,14 +116,48 @@ pub enum CallExpressionFunction {
     },
 }
 
+impl Display for CallExpressionFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        match self {
+            CallExpressionFunction::Literal { param_names, body } => {
+                write!(f, "fn({}) {}", param_names.join(", "), body)?;
+            }
+            CallExpressionFunction::Identifier { value } => {
+                write!(f, "{}", value)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Program {
     pub statements: Vec<Statement>,
 }
 
+impl Display for Program {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        for statement in &self.statements {
+            write!(f, "{}", statement)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct BlockStatement {
     pub statements: Vec<Statement>,
+}
+
+impl Display for BlockStatement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        write!(f, "{{")?;
+        for statement in &self.statements {
+            write!(f, "{}", statement)?;
+        }
+        write!(f, "}}")?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, PartialEq)]
