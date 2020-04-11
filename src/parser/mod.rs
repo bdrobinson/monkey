@@ -97,13 +97,13 @@ impl Parser<'_> {
 
         // Next we expect an expression
         self.next_token();
-        // let expr = self.parse_expression();
+        let expr = self.parse_expression(Precedence::LOWEST)?;
 
         // end with semi
         self.next_token();
         self.assert_cur_token_type(TokenType::Semicolon)?;
 
-        Ok(ast::Statement::Return {})
+        Ok(ast::Statement::Return { value: expr })
     }
 
     fn assert_cur_token_type(&self, expected: TokenType) -> Result<(), String> {
@@ -129,13 +129,14 @@ impl Parser<'_> {
         // Now the expression
         self.next_token();
         // skip expresion for now
-        // let _ = self.parse_expression();
+        let expr = self.parse_expression(Precedence::LOWEST)?;
 
         // Make sure it was terminated
         self.next_token();
         self.assert_cur_token_type(TokenType::Semicolon)?;
         Ok(ast::Statement::Let {
             name: identifier_name,
+            right: expr,
         })
     }
 

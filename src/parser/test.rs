@@ -15,12 +15,15 @@ mod test {
         let expected: Vec<ast::Statement> = vec![
             ast::Statement::Let {
                 name: String::from("x"),
+                right: ast::Expression::IntegerLiteral { value: 5 },
             },
             ast::Statement::Let {
                 name: String::from("y"),
+                right: ast::Expression::IntegerLiteral { value: 10 },
             },
             ast::Statement::Let {
                 name: String::from("foobar"),
+                right: ast::Expression::IntegerLiteral { value: 83838383 },
             },
         ];
 
@@ -37,7 +40,14 @@ mod test {
         assert_eq!(program.statements.len(), 2);
         assert_eq!(
             program.statements,
-            vec![ast::Statement::Return {}, ast::Statement::Return {},]
+            vec![
+                ast::Statement::Return {
+                    value: ast::Expression::IntegerLiteral { value: 1 }
+                },
+                ast::Statement::Return {
+                    value: ast::Expression::IntegerLiteral { value: 3 }
+                },
+            ]
         )
     }
     fn read_program(input: &'static str) -> ast::Program {

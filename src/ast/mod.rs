@@ -2,8 +2,8 @@ use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub enum Statement {
-    Let { name: String },
-    Return {},
+    Let { name: String, right: Expression },
+    Return { value: Expression },
     Expression { expression: Expression },
 }
 
