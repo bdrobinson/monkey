@@ -26,9 +26,14 @@ pub struct Parser<'a> {
     peek_token: Token,
 }
 
-struct ParsedInfix {
-    right: ast::Expression,
-    operator: ast::InfixOperator,
+enum ParsedInfix {
+    Infix {
+        right: ast::Expression,
+        operator: ast::InfixOperator,
+    },
+    Call {
+        args: Vec<ast::Expression>,
+    },
 }
 
 impl Parser<'_> {
@@ -103,14 +108,6 @@ impl Parser<'_> {
 
     fn assert_cur_token_type(&self, expected: TokenType) -> Result<(), String> {
         if self.cur_token.token_type() == expected {
-            Ok(())
-        } else {
-            parser_err(expected, &self.cur_token)
-        }
-    }
-
-    fn assert_peek_token_type(&self, expected: TokenType) -> Result<(), String> {
-        if self.peek_token.token_type() == expected {
             Ok(())
         } else {
             parser_err(expected, &self.cur_token)
@@ -200,11 +197,21 @@ impl Parser<'_> {
 
             if let Some(parsed_infix_result) = self.parse_infix_expression() {
                 let parsed_infix = parsed_infix_result?;
-                left_exp = ast::Expression::Infix {
-                    left: Box::new(left_exp),
-                    operator: parsed_infix.operator,
-                    right: Box::new(parsed_infix.right),
-                };
+                match parsed_infix {
+                    ParsedInfix::Infix { operator, right } => {
+                        left_exp = ast::Expression::Infix {
+                            left: Box::new(left_exp),
+                            operator: operator,
+                            right: Box::new(right),
+                        }
+                    }
+                    ParsedInfix::Call { args } => {
+                        left_exp = ast::Expression::CallExpression {
+                            function: expression_to_call_expression_function(left_exp)?,
+                            arguments: args,
+                        }
+                    }
+                }
             } else {
                 // it wasn't an infix op – expression is done.
                 return Ok(left_exp);
@@ -287,24 +294,51 @@ impl Parser<'_> {
         })
     }
 
+    fn parse_call_args(&mut self) -> ParserResult<Vec<ast::Expression>> {
+        self.assert_cur_token_type(TokenType::LParen)?;
+        self.next_token();
+        let mut args: Vec<ast::Expression> = vec![];
+        while self.cur_token != Token::RParen {
+            let expr = self.parse_expression(Precedence::LOWEST)?;
+            args.push(expr);
+            self.next_token();
+            if self.cur_token == Token::Comma {
+                self.next_token();
+            }
+        }
+        Ok(args)
+    }
+
     fn parse_infix_expression(&mut self) -> Option<ParserResult<ParsedInfix>> {
         let precedence = self.cur_precedence();
-        let operator = match self.cur_token {
-            Token::Plus => Some(ast::InfixOperator::Plus),
-            Token::Minus => Some(ast::InfixOperator::Minus),
-            Token::Asterisk => Some(ast::InfixOperator::Multiply),
-            Token::Slash => Some(ast::InfixOperator::Divide),
-            Token::Gt => Some(ast::InfixOperator::Gt),
-            Token::Lt => Some(ast::InfixOperator::Lt),
-            Token::Eq => Some(ast::InfixOperator::Eq),
-            Token::NotEq => Some(ast::InfixOperator::NotEq),
-            _ => None,
-        }?;
-        self.next_token();
-        Some(self.parse_expression(precedence).map(|right| ParsedInfix {
-            operator: operator,
-            right: right,
-        }))
+        let operator_token = &self.cur_token;
+        if operator_token == &Token::LParen {
+            // it's a call expression!
+            Some(
+                self.parse_call_args()
+                    .map(|args| ParsedInfix::Call { args: args }),
+            )
+        } else {
+            let operator = match self.cur_token {
+                Token::Plus => Some(ast::InfixOperator::Plus),
+                Token::Minus => Some(ast::InfixOperator::Minus),
+                Token::Asterisk => Some(ast::InfixOperator::Multiply),
+                Token::Slash => Some(ast::InfixOperator::Divide),
+                Token::Gt => Some(ast::InfixOperator::Gt),
+                Token::Lt => Some(ast::InfixOperator::Lt),
+                Token::Eq => Some(ast::InfixOperator::Eq),
+                Token::NotEq => Some(ast::InfixOperator::NotEq),
+                _ => None,
+            }?;
+            self.next_token();
+            Some(
+                self.parse_expression(precedence)
+                    .map(|right| ParsedInfix::Infix {
+                        operator: operator,
+                        right: right,
+                    }),
+            )
+        }
     }
 
     fn parse_boolean_expression(&mut self) -> ParserResult<ast::Expression> {
@@ -346,6 +380,27 @@ fn precedence_for_token_type(token_type: &TokenType) -> Precedence {
         TokenType::Minus => Precedence::MINUS,
         TokenType::Slash => Precedence::DIVIDE,
         TokenType::Asterisk => Precedence::PRODUCT,
+        TokenType::LParen => Precedence::CALL,
         _ => Precedence::LOWEST,
+    }
+}
+
+fn expression_to_call_expression_function(
+    expr: ast::Expression,
+) -> ParserResult<ast::CallExpressionFunction> {
+    match expr {
+        ast::Expression::FnLiteral { param_names, body } => {
+            Ok(ast::CallExpressionFunction::Literal {
+                param_names: param_names,
+                body: body,
+            })
+        }
+        ast::Expression::Identifier { value } => {
+            Ok(ast::CallExpressionFunction::Identifier { value: value })
+        }
+        _ => Err(format!(
+            "Left side of a call expression must either be a FnLiteral or Identifier. Got {:?}",
+            expr
+        )),
     }
 }

@@ -308,4 +308,60 @@ mod test {
             )
         )
     }
+
+    #[test]
+    fn test_call_expression() {
+        let input = "
+        add();
+        add(1);
+        add(1 + 2, 3);
+        fn(x, y){}(2);
+        ";
+        let program = read_program(input);
+        assert_eq!(
+            program.statements,
+            vec!(
+                ast::Statement::Expression {
+                    expression: ast::Expression::CallExpression {
+                        function: ast::CallExpressionFunction::Identifier {
+                            value: String::from("add")
+                        },
+                        arguments: vec!()
+                    }
+                },
+                ast::Statement::Expression {
+                    expression: ast::Expression::CallExpression {
+                        function: ast::CallExpressionFunction::Identifier {
+                            value: String::from("add")
+                        },
+                        arguments: vec!(ast::Expression::IntegerLiteral { value: 1 })
+                    }
+                },
+                ast::Statement::Expression {
+                    expression: ast::Expression::CallExpression {
+                        function: ast::CallExpressionFunction::Identifier {
+                            value: String::from("add")
+                        },
+                        arguments: vec!(
+                            ast::Expression::Infix {
+                                left: Box::new(ast::Expression::IntegerLiteral { value: 1 }),
+                                operator: ast::InfixOperator::Plus,
+                                right: Box::new(ast::Expression::IntegerLiteral { value: 2 }),
+                            },
+                            ast::Expression::IntegerLiteral { value: 3 }
+                        )
+                    }
+                },
+                ast::Statement::Expression {
+                    expression: ast::Expression::CallExpression {
+                        function: ast::CallExpressionFunction::Literal {
+                            param_names: vec![String::from("x"), String::from("y")],
+                            body: ast::BlockStatement { statements: vec![] },
+                        },
+                        arguments: vec!(ast::Expression::IntegerLiteral { value: 2 })
+                    }
+                }
+            )
+        )
+    }
 }

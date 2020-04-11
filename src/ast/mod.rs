@@ -36,6 +36,10 @@ pub enum Expression {
         param_names: Vec<String>,
         body: BlockStatement,
     },
+    CallExpression {
+        function: CallExpressionFunction,
+        arguments: Vec<Expression>,
+    },
 }
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -58,9 +62,25 @@ impl fmt::Display for Expression {
                 param_names: _,
                 body: _,
             } => String::from("fn literal"),
+            Expression::CallExpression {
+                function: _,
+                arguments: _,
+            } => String::from("call expr"),
         };
         write!(f, "{}", string_repr)
     }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum CallExpressionFunction {
+    // Bit annoying to have this duplicated logic but meh
+    Literal {
+        param_names: Vec<String>,
+        body: BlockStatement,
+    },
+    Identifier {
+        value: String,
+    },
 }
 
 #[derive(Debug, PartialEq)]
