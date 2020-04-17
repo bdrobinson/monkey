@@ -12,12 +12,7 @@ pub fn eval_expression(expression: ast::Expression) -> Result<Object, String> {
         } => {
             let left = eval_expression(*left)?;
             let right = eval_expression(*right)?;
-            if let Object::Integer(left) = left {
-                if let Object::Integer(right) = right {
-                    return Ok(arithmetic(left, operator, right));
-                }
-            }
-            unimplemented!();
+            eval_infix(left, operator, right)
         }
         ast::Expression::Boolean { value } => Ok(Object::Boolean(value)),
         ast::Expression::Prefix { operator, right } => {
@@ -58,15 +53,31 @@ pub fn eval_program(program: ast::Program) -> Result<Option<Object>, String> {
     Ok(result)
 }
 
-fn arithmetic(left: i64, op: ast::InfixOperator, right: i64) -> Object {
-    match op {
-        ast::InfixOperator::Plus => Object::Integer(left + right),
-        ast::InfixOperator::Minus => Object::Integer(left - right),
-        ast::InfixOperator::Multiply => Object::Integer(left * right),
-        ast::InfixOperator::Divide => Object::Integer(left / right),
-        ast::InfixOperator::Gt => Object::Boolean(left > right),
-        ast::InfixOperator::Lt => Object::Boolean(left < right),
-        ast::InfixOperator::Eq => Object::Boolean(left == right),
-        ast::InfixOperator::NotEq => Object::Boolean(left != right),
+fn eval_infix(left: Object, op: ast::InfixOperator, right: Object) -> Result<Object, String> {
+    match (&left, &op, &right) {
+        (_, ast::InfixOperator::Eq, _) => Ok(Object::Boolean(left == right)),
+        (_, ast::InfixOperator::NotEq, _) => Ok(Object::Boolean(left != right)),
+        (Object::Integer(left), ast::InfixOperator::Plus, Object::Integer(right)) => {
+            Ok(Object::Integer(left + right))
+        }
+        (Object::Integer(left), ast::InfixOperator::Minus, Object::Integer(right)) => {
+            Ok(Object::Integer(left - right))
+        }
+        (Object::Integer(left), ast::InfixOperator::Multiply, Object::Integer(right)) => {
+            Ok(Object::Integer(left * right))
+        }
+        (Object::Integer(left), ast::InfixOperator::Divide, Object::Integer(right)) => {
+            Ok(Object::Integer(left / right))
+        }
+        (Object::Integer(left), ast::InfixOperator::Gt, Object::Integer(right)) => {
+            Ok(Object::Boolean(left > right))
+        }
+        (Object::Integer(left), ast::InfixOperator::Lt, Object::Integer(right)) => {
+            Ok(Object::Boolean(left < right))
+        }
+        (left, op, right) => Err(format!(
+            "Cannot evaluate infix expression {} {} {}",
+            left, op, right
+        )),
     }
 }

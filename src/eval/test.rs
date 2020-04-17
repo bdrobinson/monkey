@@ -94,6 +94,14 @@ mod test {
                 input: "!!false",
                 output: false,
             },
+            TestEvalBoolCase {
+                input: "true == true",
+                output: true,
+            },
+            TestEvalBoolCase {
+                input: "3 == 3",
+                output: true,
+            },
         ];
         for test in tests {
             assert_eq!(
