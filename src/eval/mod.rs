@@ -27,10 +27,41 @@ pub fn eval_expression(expression: ast::Expression) -> Result<Object, String> {
                 )),
             }
         }
+        ast::Expression::If {
+            condition,
+            consequence,
+            alternative,
+        } => {
+            let condition = eval_expression(*condition)?;
+            let condition = if let Object::Boolean(value) = condition {
+                value
+            } else {
+                return Err(format!(
+                    "The condition in an if statement must be a bool. Got {}",
+                    condition.type_name()
+                ));
+            };
+            // Pattern matching is cool.
+            let block_to_eval = match (condition, alternative) {
+                (true, _) => consequence,
+                (false, Some(alternative)) => alternative,
+                (false, None) => ast::BlockStatement { statements: vec![] },
+            };
+            let evaluated_block = eval_statements(block_to_eval.statements)?;
+            Ok(evaluated_block.unwrap_or(Object::Null))
+        }
         _ => {
             unimplemented!();
         }
     }
+}
+
+fn eval_statements(statements: Vec<ast::Statement>) -> Result<Option<Object>, String> {
+    let mut result: Option<Object> = None;
+    for statement in statements {
+        result = eval_statement(statement)?;
+    }
+    Ok(result)
 }
 
 fn eval_statement(statement: ast::Statement) -> Result<Option<Object>, String> {
@@ -46,11 +77,7 @@ fn eval_statement(statement: ast::Statement) -> Result<Option<Object>, String> {
 }
 
 pub fn eval_program(program: ast::Program) -> Result<Option<Object>, String> {
-    let mut result: Option<Object> = None;
-    for statement in program.statements {
-        result = eval_statement(statement)?;
-    }
-    Ok(result)
+    eval_statements(program.statements)
 }
 
 fn eval_infix(left: Object, op: ast::InfixOperator, right: Object) -> Result<Object, String> {

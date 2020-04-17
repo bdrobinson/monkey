@@ -111,6 +111,43 @@ mod test {
         }
     }
 
+    struct TestEvalAnyCase {
+        input: &'static str,
+        output: Object,
+    }
+    #[test]
+    fn test_if_expression() {
+        let tests: Vec<TestEvalAnyCase> = vec![
+            TestEvalAnyCase {
+                input: "if (true) { 5 }",
+                output: Object::Integer(5),
+            },
+            TestEvalAnyCase {
+                input: "if (3 > 2) { 65 }",
+                output: Object::Integer(65),
+            },
+            TestEvalAnyCase {
+                input: "if (true) {}",
+                output: Object::Null,
+            },
+            TestEvalAnyCase {
+                input: "if (false) {}",
+                output: Object::Null,
+            },
+            TestEvalAnyCase {
+                input: "if (false) { 5 } else {}",
+                output: Object::Null,
+            },
+            TestEvalAnyCase {
+                input: "if (false) { 2 } else { 3 }",
+                output: Object::Integer(3),
+            },
+        ];
+        for test in tests {
+            assert_eq!(test.output, eval_expression_statement(test.input));
+        }
+    }
+
     fn eval_expression_statement(input: &'static str) -> Object {
         let mut lexer = lexer::new(input);
         let mut parser = parser::Parser::new(&mut lexer);
