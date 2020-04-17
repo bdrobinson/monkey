@@ -20,6 +20,18 @@ pub fn eval_expression(expression: ast::Expression) -> Result<Object, String> {
             unimplemented!();
         }
         ast::Expression::Boolean { value } => Ok(Object::Boolean(value)),
+        ast::Expression::Prefix { operator, right } => {
+            let object = eval_expression(*right)?;
+            match (&operator, &object) {
+                (ast::PrefixOperator::Minus, Object::Integer(value)) => Ok(Object::Integer(-value)),
+                (ast::PrefixOperator::Bang, Object::Boolean(value)) => Ok(Object::Boolean(!value)),
+                _ => Err(format!(
+                    "The prefix {} cannot appear before type {}",
+                    operator,
+                    object.type_name()
+                )),
+            }
+        }
         _ => {
             unimplemented!();
         }

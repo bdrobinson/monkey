@@ -34,6 +34,10 @@ mod test {
                 input: "5 + 10 / 2 ",
                 output: 10,
             },
+            TestEvalIntCase {
+                input: "-5",
+                output: -5,
+            },
         ];
         for test in tests {
             assert_eq!(
@@ -73,6 +77,22 @@ mod test {
             TestEvalBoolCase {
                 input: "2 > 1",
                 output: true,
+            },
+            TestEvalBoolCase {
+                input: "!true",
+                output: false,
+            },
+            TestEvalBoolCase {
+                input: "!false",
+                output: true,
+            },
+            TestEvalBoolCase {
+                input: "!!true",
+                output: true,
+            },
+            TestEvalBoolCase {
+                input: "!!false",
+                output: false,
             },
         ];
         for test in tests {
