@@ -1,3 +1,5 @@
+pub mod environment;
+
 use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]

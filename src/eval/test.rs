@@ -4,7 +4,7 @@ mod test {
     use crate::ast;
     use crate::eval;
     use crate::lexer;
-    use crate::object::Object;
+    use crate::object::{environment::Environment, Object};
     use crate::parser;
 
     struct TestEvalIntCase {
@@ -152,9 +152,10 @@ mod test {
         let mut lexer = lexer::new(input);
         let mut parser = parser::Parser::new(&mut lexer);
         let mut program = parser.parse_program().unwrap();
+        let mut env = Environment::new();
         let statement: ast::Statement = program.statements.remove(0);
         if let ast::Statement::Expression { expression } = statement {
-            eval::eval_expression(expression).unwrap()
+            eval::eval_expression(expression, &mut env).unwrap()
         } else {
             panic!("Expected expression statement")
         }
@@ -164,7 +165,8 @@ mod test {
         let mut lexer = lexer::new(input);
         let mut parser = parser::Parser::new(&mut lexer);
         let program = parser.parse_program().unwrap();
-        eval::eval_program(program).unwrap().unwrap()
+        let mut env = Environment::new();
+        eval::eval_program(program, &mut env).unwrap().unwrap()
     }
 
     #[test]
@@ -238,13 +240,54 @@ mod test {
                 input: "!5;",
                 error_message: "The prefix ! cannot appear before type Integer",
             },
+            TestErrorCase {
+                input: "foobar;",
+                error_message: "The identifier 'foobar' has not been bound",
+            },
         ];
         for test in tests {
             let mut lexer = lexer::new(test.input);
             let mut parser = parser::Parser::new(&mut lexer);
             let program = parser.parse_program().unwrap();
-            let evaluation_result = eval::eval_program(program);
+            let mut env = Environment::new();
+            let evaluation_result = eval::eval_program(program, &mut env);
             assert_eq!(evaluation_result, Err(String::from(test.error_message)));
+        }
+    }
+
+    #[test]
+    fn test_let_statements() {
+        let tests: Vec<TestEvalAnyCase> = vec![
+            TestEvalAnyCase {
+                input: "let a = 5; a;",
+                output: Object::Integer(5),
+            },
+            TestEvalAnyCase {
+                input: "let a = 5 * 5; a;",
+                output: Object::Integer(25),
+            },
+            TestEvalAnyCase {
+                input: "let a = 5; let b = a; b;",
+                output: Object::Integer(5),
+            },
+            TestEvalAnyCase {
+                input: "let a = 5; let b = a; let c = a + b + 5; c;",
+                output: Object::Integer(15),
+            },
+            // Annoying but that seems to be the behaviour we've gone for for now.
+            TestEvalAnyCase {
+                input: "
+                    if (true) {
+                        let a = 3;
+                    }
+                    a;
+                ",
+                output: Object::Integer(3),
+            },
+        ];
+        for test in tests {
+            let result = eval_program(test.input);
+            assert_eq!(result, test.output);
         }
     }
 }

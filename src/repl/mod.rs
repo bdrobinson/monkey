@@ -2,6 +2,7 @@ use io::BufRead;
 use std::io;
 
 use crate::{eval, lexer, object, parser};
+use object::environment;
 
 const PROMPT: &str = ">> ";
 
@@ -14,9 +15,10 @@ pub fn start(
     output.write("Type some code!\n".as_bytes())?;
     output.write(PROMPT.as_bytes())?;
     output.flush()?;
+    let mut env = environment::Environment::new();
     for line_result in input.lines() {
         let line = line_result.unwrap();
-        match eval_line(line) {
+        match eval_line(line, &mut env) {
             Ok(evaluated) => {
                 if let Some(obj) = evaluated {
                     output.write(format!("{}\n", obj).as_bytes())?;
@@ -34,11 +36,14 @@ pub fn start(
     Ok(())
 }
 
-fn eval_line(line: String) -> Result<Option<object::Object>, String> {
+fn eval_line(
+    line: String,
+    env: &mut environment::Environment,
+) -> Result<Option<object::Object>, String> {
     let line = line.trim();
     let mut lexer = lexer::new(line);
     let mut parser = parser::Parser::new(&mut lexer);
     let program = parser.parse_program()?;
-    let object = eval::eval_program(program)?;
+    let object = eval::eval_program(program, env)?;
     Ok(object)
 }

@@ -1,8 +1,11 @@
 use crate::ast;
-use crate::object::Object;
+use crate::object::{environment::Environment, Object};
 mod test;
 
-pub fn eval_expression(expression: ast::Expression) -> Result<Object, String> {
+pub fn eval_expression(
+    expression: ast::Expression,
+    env: &mut Environment,
+) -> Result<Object, String> {
     match expression {
         ast::Expression::IntegerLiteral { value } => Ok(Object::Integer(value)),
         ast::Expression::Infix {
@@ -10,13 +13,13 @@ pub fn eval_expression(expression: ast::Expression) -> Result<Object, String> {
             operator,
             right,
         } => {
-            let left = eval_expression(*left)?;
-            let right = eval_expression(*right)?;
+            let left = eval_expression(*left, env)?;
+            let right = eval_expression(*right, env)?;
             eval_infix(left, operator, right)
         }
         ast::Expression::Boolean { value } => Ok(Object::Boolean(value)),
         ast::Expression::Prefix { operator, right } => {
-            let object = eval_expression(*right)?;
+            let object = eval_expression(*right, env)?;
             match (&operator, &object) {
                 (ast::PrefixOperator::Minus, Object::Integer(value)) => Ok(Object::Integer(-value)),
                 (ast::PrefixOperator::Bang, Object::Boolean(value)) => Ok(Object::Boolean(!value)),
@@ -32,7 +35,7 @@ pub fn eval_expression(expression: ast::Expression) -> Result<Object, String> {
             consequence,
             alternative,
         } => {
-            let condition = eval_expression(*condition)?;
+            let condition = eval_expression(*condition, env)?;
             let condition = if let Object::Boolean(value) = condition {
                 value
             } else {
@@ -47,8 +50,12 @@ pub fn eval_expression(expression: ast::Expression) -> Result<Object, String> {
                 (false, Some(alternative)) => alternative,
                 (false, None) => ast::BlockStatement { statements: vec![] },
             };
-            let evaluated_block = eval_statements(block_to_eval.statements)?;
+            let evaluated_block = eval_statements(block_to_eval.statements, env)?;
             Ok(evaluated_block.unwrap_or(Object::Null))
+        }
+        ast::Expression::Identifier { value } => {
+            let obj = env.get(&value)?;
+            Ok(obj.clone())
         }
         _ => {
             unimplemented!();
@@ -56,10 +63,13 @@ pub fn eval_expression(expression: ast::Expression) -> Result<Object, String> {
     }
 }
 
-fn eval_statements(statements: Vec<ast::Statement>) -> Result<Option<Object>, String> {
+fn eval_statements(
+    statements: Vec<ast::Statement>,
+    env: &mut Environment,
+) -> Result<Option<Object>, String> {
     let mut result: Option<Object> = None;
     for statement in statements {
-        let evaluated_statement_opt = eval_statement(statement)?;
+        let evaluated_statement_opt = eval_statement(statement, env)?;
         let mut should_break = false;
         if let Some(evaluated_statement) = &evaluated_statement_opt {
             if matches!(&evaluated_statement, Object::ReturnValue(_)) {
@@ -74,24 +84,32 @@ fn eval_statements(statements: Vec<ast::Statement>) -> Result<Option<Object>, St
     Ok(result)
 }
 
-fn eval_statement(statement: ast::Statement) -> Result<Option<Object>, String> {
+fn eval_statement(
+    statement: ast::Statement,
+    env: &mut Environment,
+) -> Result<Option<Object>, String> {
     match statement {
         ast::Statement::Expression { expression } => {
-            let object = eval_expression(expression)?;
+            let object = eval_expression(expression, env)?;
             Ok(Some(object))
         }
         ast::Statement::Return { value } => {
-            let contained_value = eval_expression(value)?;
+            let contained_value = eval_expression(value, env)?;
             Ok(Some(Object::ReturnValue(Box::new(contained_value))))
         }
-        _ => {
-            unimplemented!();
+        ast::Statement::Let { name, right } => {
+            let right_obj = eval_expression(right, env)?;
+            env.set(&name, right_obj);
+            Ok(None)
         }
     }
 }
 
-pub fn eval_program(program: ast::Program) -> Result<Option<Object>, String> {
-    let evaluated = eval_statements(program.statements)?;
+pub fn eval_program(
+    program: ast::Program,
+    env: &mut Environment,
+) -> Result<Option<Object>, String> {
+    let evaluated = eval_statements(program.statements, env)?;
     Ok(evaluated.map(|o| match o {
         Object::ReturnValue(value) => *value,
         other => other,
