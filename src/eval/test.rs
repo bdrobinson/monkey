@@ -186,6 +186,17 @@ mod test {
                 input: "9; return 2+5; 9;",
                 output: Object::Integer(7),
             },
+            TestEvalAnyCase {
+                input: "
+                if (10 > 1) {
+                    if (10 > 1) {
+                        return 10; 
+                    }
+                    return 1;
+                }
+                ",
+                output: Object::Integer(10),
+            },
         ];
         for test in tests {
             assert_eq!(test.output, eval_program(test.input));

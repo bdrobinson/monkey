@@ -60,13 +60,16 @@ fn eval_statements(statements: Vec<ast::Statement>) -> Result<Option<Object>, St
     let mut result: Option<Object> = None;
     for statement in statements {
         let evaluated_statement_opt = eval_statement(statement)?;
+        let mut should_break = false;
         if let Some(evaluated_statement) = &evaluated_statement_opt {
-            if let Object::ReturnValue(returned_value) = evaluated_statement {
-                result = Some(*returned_value.clone());
-                break;
+            if matches!(&evaluated_statement, Object::ReturnValue(_)) {
+                should_break = true;
             }
         }
         result = evaluated_statement_opt;
+        if should_break {
+            break;
+        }
     }
     Ok(result)
 }
@@ -88,7 +91,11 @@ fn eval_statement(statement: ast::Statement) -> Result<Option<Object>, String> {
 }
 
 pub fn eval_program(program: ast::Program) -> Result<Option<Object>, String> {
-    eval_statements(program.statements)
+    let evaluated = eval_statements(program.statements)?;
+    Ok(evaluated.map(|o| match o {
+        Object::ReturnValue(value) => *value,
+        other => other,
+    }))
 }
 
 fn eval_infix(left: Object, op: ast::InfixOperator, right: Object) -> Result<Object, String> {
