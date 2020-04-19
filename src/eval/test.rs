@@ -202,4 +202,49 @@ mod test {
             assert_eq!(test.output, eval_program(test.input));
         }
     }
+
+    struct TestErrorCase {
+        input: &'static str,
+        error_message: &'static str,
+    }
+    #[test]
+    fn test_errors() {
+        let tests: Vec<TestErrorCase> = vec![
+            TestErrorCase {
+                input: "5 + true;",
+                error_message: "Cannot evaluate infix expression 5 + true",
+            },
+            TestErrorCase {
+                input: "5 + true; 5;",
+                error_message: "Cannot evaluate infix expression 5 + true",
+            },
+            TestErrorCase {
+                input: "-true",
+                error_message: "The prefix - cannot appear before type Boolean",
+            },
+            TestErrorCase {
+                input: "true + false;",
+                error_message: "Cannot evaluate infix expression true + false",
+            },
+            TestErrorCase {
+                input: "5; true + false; 5;",
+                error_message: "Cannot evaluate infix expression true + false",
+            },
+            TestErrorCase {
+                input: "if (10 > 1) { true + false; }",
+                error_message: "Cannot evaluate infix expression true + false",
+            },
+            TestErrorCase {
+                input: "!5;",
+                error_message: "The prefix ! cannot appear before type Integer",
+            },
+        ];
+        for test in tests {
+            let mut lexer = lexer::new(test.input);
+            let mut parser = parser::Parser::new(&mut lexer);
+            let program = parser.parse_program().unwrap();
+            let evaluation_result = eval::eval_program(program);
+            assert_eq!(evaluation_result, Err(String::from(test.error_message)));
+        }
+    }
 }
