@@ -59,7 +59,14 @@ pub fn eval_expression(expression: ast::Expression) -> Result<Object, String> {
 fn eval_statements(statements: Vec<ast::Statement>) -> Result<Option<Object>, String> {
     let mut result: Option<Object> = None;
     for statement in statements {
-        result = eval_statement(statement)?;
+        let evaluated_statement_opt = eval_statement(statement)?;
+        if let Some(evaluated_statement) = &evaluated_statement_opt {
+            if let Object::ReturnValue(returned_value) = evaluated_statement {
+                result = Some(*returned_value.clone());
+                break;
+            }
+        }
+        result = evaluated_statement_opt;
     }
     Ok(result)
 }
@@ -69,6 +76,10 @@ fn eval_statement(statement: ast::Statement) -> Result<Option<Object>, String> {
         ast::Statement::Expression { expression } => {
             let object = eval_expression(expression)?;
             Ok(Some(object))
+        }
+        ast::Statement::Return { value } => {
+            let contained_value = eval_expression(value)?;
+            Ok(Some(Object::ReturnValue(Box::new(contained_value))))
         }
         _ => {
             unimplemented!();

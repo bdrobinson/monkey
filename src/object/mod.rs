@@ -1,10 +1,11 @@
 use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Object {
     Integer(i64),
     Boolean(bool),
     Null,
+    ReturnValue(Box<Object>),
 }
 impl Object {
     pub fn type_name(&self) -> String {
@@ -12,6 +13,7 @@ impl Object {
             Object::Integer(_) => "Integer",
             Object::Boolean(_) => "Boolean",
             Object::Null => "Null",
+            Object::ReturnValue(_) => "Return value",
         };
         String::from(string)
     }
@@ -23,6 +25,7 @@ impl fmt::Display for Object {
             Object::Integer(value) => value.to_string(),
             Object::Boolean(value) => value.to_string(),
             Object::Null => String::from("null"),
+            Object::ReturnValue(obj) => String::from(format!("Return value: {}", obj)),
         };
         write!(f, "{}", repr)?;
         Ok(())

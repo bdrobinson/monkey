@@ -160,17 +160,35 @@ mod test {
         }
     }
 
-    // func testEval(input string) object.Object { l := lexer.New(input)
-    // p := parser.New(l)
-    // program := p.ParseProgram()
-    // return Eval(program) }
-    // func testIntegerObject(t *testing.T, obj object.Object, expected int64) bool { result, ok := obj.(*object.Integer)
-    // if !ok {
-    // t.Errorf("object is not Integer. got=%T (%+v)", obj, obj)
-    // return false }
-    // if result.Value != expected {
-    // t.Errorf("object has wrong value. got=%d, want=%d",
-    // result.Value, expected)
-    // return false }
-    // return true }
+    fn eval_program(input: &'static str) -> Object {
+        let mut lexer = lexer::new(input);
+        let mut parser = parser::Parser::new(&mut lexer);
+        let program = parser.parse_program().unwrap();
+        eval::eval_program(program).unwrap().unwrap()
+    }
+
+    #[test]
+    fn test_return_statement() {
+        let tests: Vec<TestEvalAnyCase> = vec![
+            TestEvalAnyCase {
+                input: "return 3;",
+                output: Object::Integer(3),
+            },
+            TestEvalAnyCase {
+                input: "return 10; 9;",
+                output: Object::Integer(10),
+            },
+            TestEvalAnyCase {
+                input: "return 2*5; 9;",
+                output: Object::Integer(10),
+            },
+            TestEvalAnyCase {
+                input: "9; return 2+5; 9;",
+                output: Object::Integer(7),
+            },
+        ];
+        for test in tests {
+            assert_eq!(test.output, eval_program(test.input));
+        }
+    }
 }
