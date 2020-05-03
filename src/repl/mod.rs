@@ -1,5 +1,6 @@
 use io::BufRead;
 use std::io;
+use std::rc::Rc;
 
 use crate::{eval, lexer, object, parser};
 use object::environment;
@@ -39,7 +40,7 @@ pub fn start(
 fn eval_line(
     line: String,
     env: &mut environment::Environment,
-) -> Result<Option<object::Object>, String> {
+) -> Result<Option<Rc<object::Object>>, String> {
     let line = line.trim();
     let mut lexer = lexer::new(line);
     let mut parser = parser::Parser::new(&mut lexer);

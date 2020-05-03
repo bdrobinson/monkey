@@ -1,13 +1,14 @@
 pub mod environment;
 
 use std::fmt;
+use std::rc::Rc;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Object {
     Integer(i64),
     Boolean(bool),
     Null,
-    ReturnValue(Box<Object>),
+    ReturnValue(Rc<Object>),
 }
 impl Object {
     pub fn type_name(&self) -> String {

@@ -6,6 +6,7 @@ mod test {
     use crate::lexer;
     use crate::object::{environment::Environment, Object};
     use crate::parser;
+    use std::rc::Rc;
 
     struct TestEvalIntCase {
         input: &'static str,
@@ -42,7 +43,7 @@ mod test {
         for test in tests {
             assert_eq!(
                 Object::Integer(test.output),
-                eval_expression_statement(test.input)
+                *eval_expression_statement(test.input)
             );
         }
     }
@@ -106,7 +107,7 @@ mod test {
         for test in tests {
             assert_eq!(
                 Object::Boolean(test.output),
-                eval_expression_statement(test.input)
+                *eval_expression_statement(test.input)
             );
         }
     }
@@ -144,11 +145,11 @@ mod test {
             },
         ];
         for test in tests {
-            assert_eq!(test.output, eval_expression_statement(test.input));
+            assert_eq!(test.output, *eval_expression_statement(test.input));
         }
     }
 
-    fn eval_expression_statement(input: &'static str) -> Object {
+    fn eval_expression_statement(input: &'static str) -> Rc<Object> {
         let mut lexer = lexer::new(input);
         let mut parser = parser::Parser::new(&mut lexer);
         let mut program = parser.parse_program().unwrap();
@@ -161,7 +162,7 @@ mod test {
         }
     }
 
-    fn eval_program(input: &'static str) -> Object {
+    fn eval_program(input: &'static str) -> Rc<Object> {
         let mut lexer = lexer::new(input);
         let mut parser = parser::Parser::new(&mut lexer);
         let program = parser.parse_program().unwrap();
@@ -201,7 +202,7 @@ mod test {
             },
         ];
         for test in tests {
-            assert_eq!(test.output, eval_program(test.input));
+            assert_eq!(test.output, *eval_program(test.input));
         }
     }
 
@@ -287,7 +288,7 @@ mod test {
         ];
         for test in tests {
             let result = eval_program(test.input);
-            assert_eq!(result, test.output);
+            assert_eq!(*result, test.output);
         }
     }
 }
