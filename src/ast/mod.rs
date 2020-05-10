@@ -1,7 +1,7 @@
 use core::fmt::Display;
 use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     Let { name: String, right: Expression },
     Return { value: Expression },
@@ -25,7 +25,7 @@ impl Display for Statement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     Identifier {
         value: String,
@@ -104,7 +104,7 @@ impl fmt::Display for Expression {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum CallExpressionFunction {
     // Bit annoying to have this duplicated logic but meh
     Literal {
@@ -144,7 +144,7 @@ impl Display for Program {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BlockStatement {
     pub statements: Vec<Statement>,
 }
@@ -160,7 +160,7 @@ impl Display for BlockStatement {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum PrefixOperator {
     Bang,
     Minus,
@@ -176,7 +176,7 @@ impl fmt::Display for PrefixOperator {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum InfixOperator {
     Plus,
     Minus,

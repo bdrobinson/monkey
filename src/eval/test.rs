@@ -291,4 +291,38 @@ mod test {
             assert_eq!(*result, test.output);
         }
     }
+
+    #[test]
+    fn test_fn_application() {
+        let tests: Vec<TestEvalAnyCase> = vec![
+            TestEvalAnyCase {
+                input: "let identity = fn(x) { x; }; identity(5);",
+                output: Object::Integer(5),
+            },
+            TestEvalAnyCase {
+                input: "let identity = fn(x) { return x; }; identity(5);",
+                output: Object::Integer(5),
+            },
+            TestEvalAnyCase {
+                input: "let double = fn(x) { x * 2; }; double(5);",
+                output: Object::Integer(10),
+            },
+            TestEvalAnyCase {
+                input: "let add = fn(x, y) { x + y; }; add(5, 5);",
+                output: Object::Integer(10),
+            },
+            TestEvalAnyCase {
+                input: "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));",
+                output: Object::Integer(20),
+            },
+            TestEvalAnyCase {
+                input: "fn(x) { x; }(5)",
+                output: Object::Integer(5),
+            },
+        ];
+        for test in tests {
+            let result = eval_program(test.input);
+            assert_eq!(*result, test.output);
+        }
+    }
 }

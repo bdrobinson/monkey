@@ -16,7 +16,7 @@ pub fn eval_expression(
         } => {
             let left = eval_expression(*left, env)?;
             let right = eval_expression(*right, env)?;
-            eval_infix(left.clone(), operator, right.clone()).map(|exp| Rc::new(exp))
+            eval_infix(left, operator, right).map(|exp| Rc::new(exp))
         }
         ast::Expression::Boolean { value } => Ok(Rc::new(Object::Boolean(value))),
         ast::Expression::Prefix { operator, right } => {
@@ -62,10 +62,71 @@ pub fn eval_expression(
             let obj = env.get(&value)?;
             Ok(obj.clone())
         }
-        _ => {
-            unimplemented!();
+        ast::Expression::FnLiteral { param_names, body } => Ok(Rc::new(Object::Function {
+            body: body.clone(),
+            parameter_names: param_names.clone(),
+            env: Environment::new(), // TODO: this is a bug – closures won't capture their env.
+        })),
+        ast::Expression::CallExpression {
+            function,
+            arguments,
+        } => {
+            let evaluated_arguments = eval_expressions(arguments, env)?;
+            match function {
+                ast::CallExpressionFunction::Identifier { value } => {
+                    let func = env.get(&value)?;
+                    if let Object::Function {
+                        parameter_names,
+                        body,
+                        env,
+                    } = &*func
+                    {
+                        call_function(&evaluated_arguments, &parameter_names, body.clone(), env)
+                    } else {
+                        Err(format!("The identifier '{}' is not a function", value))
+                    }
+                }
+                ast::CallExpressionFunction::Literal { param_names, body } => {
+                    call_function(&evaluated_arguments, &param_names, body, env)
+                }
+            }
         }
     }
+}
+
+fn eval_expressions(
+    expressions: Vec<ast::Expression>,
+    env: &mut Environment,
+) -> Result<Vec<Rc<Object>>, String> {
+    // TODO: use iterators
+    let mut results: Vec<Rc<Object>> = vec![];
+    for expression in expressions {
+        let obj = eval_expression(expression, env)?;
+        results.push(obj);
+    }
+    Ok(results)
+}
+
+fn call_function(
+    args: &Vec<Rc<Object>>,
+    expected_param_names: &Vec<String>,
+    body: ast::BlockStatement,
+    parent_env: &Environment,
+) -> Result<Rc<Object>, String> {
+    if args.len() != expected_param_names.len() {
+        return Err(format!(
+            "Expected {} args, got {}",
+            expected_param_names.len(),
+            args.len()
+        ));
+    }
+    let mut call_env = Environment::new(); // TODO bug, should be copying parent's.
+
+    for (name, obj) in expected_param_names.iter().zip(args) {
+        call_env.set(name, Rc::clone(obj));
+    }
+    let result = eval_statements(body.statements, &mut call_env)?;
+    Ok(result.unwrap_or(Rc::new(Object::Null)))
 }
 
 fn eval_statements(
