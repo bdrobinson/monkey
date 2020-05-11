@@ -399,6 +399,13 @@ fn expression_to_call_expression_function(
         ast::Expression::Identifier { value } => {
             Ok(ast::CallExpressionFunction::Identifier { value: value })
         }
+        ast::Expression::CallExpression {
+            function,
+            arguments,
+        } => Ok(ast::CallExpressionFunction::CallExpressionFunction {
+            left_fn: Box::new(function),
+            left_args: arguments,
+        }),
         _ => Err(format!(
             "Left side of a call expression must either be a FnLiteral or Identifier. Got {:?}",
             expr

@@ -91,6 +91,28 @@ pub fn eval_expression(
                 ast::CallExpressionFunction::Literal { param_names, body } => {
                     call_function(&evaluated_arguments, &param_names, body, &env)
                 }
+                ast::CallExpressionFunction::CallExpressionFunction { left_fn, left_args } => {
+                    let evaluated_left = eval_expression(
+                        ast::Expression::CallExpression {
+                            arguments: left_args,
+                            function: *left_fn,
+                        },
+                        env,
+                    )?;
+                    if let Object::Function {
+                        parameter_names,
+                        body,
+                        env,
+                    } = &*evaluated_left
+                    {
+                        call_function(&evaluated_arguments, &parameter_names, body.clone(), &env)
+                    } else {
+                        Err(format!(
+                            "The left side of a call expression must be a function. Got {}",
+                            evaluated_left
+                        ))
+                    }
+                }
             }
         }
     }

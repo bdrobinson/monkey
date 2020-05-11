@@ -344,6 +344,10 @@ mod test {
                 ", // this works even though the env the inner fn was defined in no longer exists!
                 output: Object::Integer(15),
             },
+            TestEvalAnyCase {
+                input: "let multiply = fn(x) { fn(y) { x * y }; }; multiply(3)(5);",
+                output: Object::Integer(15),
+            },
         ];
         for test in tests {
             let result = eval_program(test.input);

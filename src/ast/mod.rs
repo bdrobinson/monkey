@@ -114,6 +114,10 @@ pub enum CallExpressionFunction {
     Identifier {
         value: String,
     },
+    CallExpressionFunction {
+        left_fn: Box<CallExpressionFunction>,
+        left_args: Vec<Expression>,
+    },
 }
 
 impl Display for CallExpressionFunction {
@@ -124,6 +128,18 @@ impl Display for CallExpressionFunction {
             }
             CallExpressionFunction::Identifier { value } => {
                 write!(f, "{}", value)?;
+            }
+            CallExpressionFunction::CallExpressionFunction { left_fn, left_args } => {
+                write!(
+                    f,
+                    "{}({})",
+                    left_fn,
+                    left_args
+                        .iter()
+                        .map(|a| a.to_string())
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                )?;
             }
         }
         Ok(())
