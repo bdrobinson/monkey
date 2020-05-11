@@ -6,6 +6,7 @@ mod test {
     use crate::lexer;
     use crate::object::{environment::Environment, Object};
     use crate::parser;
+    use core::cell::RefCell;
     use std::rc::Rc;
 
     struct TestEvalIntCase {
@@ -153,10 +154,10 @@ mod test {
         let mut lexer = lexer::new(input);
         let mut parser = parser::Parser::new(&mut lexer);
         let mut program = parser.parse_program().unwrap();
-        let mut env = Environment::new();
+        let env = Environment::new();
         let statement: ast::Statement = program.statements.remove(0);
         if let ast::Statement::Expression { expression } = statement {
-            eval::eval_expression(expression, &mut env).unwrap()
+            eval::eval_expression(expression, &Rc::new(RefCell::new(env))).unwrap()
         } else {
             panic!("Expected expression statement")
         }
@@ -166,8 +167,10 @@ mod test {
         let mut lexer = lexer::new(input);
         let mut parser = parser::Parser::new(&mut lexer);
         let program = parser.parse_program().unwrap();
-        let mut env = Environment::new();
-        eval::eval_program(program, &mut env).unwrap().unwrap()
+        let env = Environment::new();
+        eval::eval_program(program, &Rc::new(RefCell::new(env)))
+            .unwrap()
+            .unwrap()
     }
 
     #[test]
@@ -250,8 +253,8 @@ mod test {
             let mut lexer = lexer::new(test.input);
             let mut parser = parser::Parser::new(&mut lexer);
             let program = parser.parse_program().unwrap();
-            let mut env = Environment::new();
-            let evaluation_result = eval::eval_program(program, &mut env);
+            let env = Environment::new();
+            let evaluation_result = eval::eval_program(program, &Rc::new(RefCell::new(env)));
             assert_eq!(evaluation_result, Err(String::from(test.error_message)));
         }
     }
@@ -318,6 +321,28 @@ mod test {
             TestEvalAnyCase {
                 input: "fn(x) { x; }(5)",
                 output: Object::Integer(5),
+            },
+            // Check closure can capture its env
+            TestEvalAnyCase {
+                input: "let a = 3; let b = fn() { a; }; b();",
+                output: Object::Integer(3),
+            },
+            // Check closure doesn't overwrite parent env
+            TestEvalAnyCase {
+                input: "let a = 3; fn() { let a = 5; }(); a;",
+                output: Object::Integer(3),
+            },
+            TestEvalAnyCase {
+                input: "
+                let times_by_five = fn() { 
+                    let a = 5;
+                    fn(x) {
+                        x * a
+                    };
+                }();
+                times_by_five(3);
+                ", // this works even though the env the inner fn was defined in no longer exists!
+                output: Object::Integer(15),
             },
         ];
         for test in tests {

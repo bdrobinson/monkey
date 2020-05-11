@@ -1,11 +1,13 @@
 use crate::ast;
 use crate::object::{environment::Environment, Object};
+use core::cell::RefCell;
 use std::rc::Rc;
+
 mod test;
 
 pub fn eval_expression(
     expression: ast::Expression,
-    env: &mut Environment,
+    env: &Rc<RefCell<Environment>>,
 ) -> Result<Rc<Object>, String> {
     match expression {
         ast::Expression::IntegerLiteral { value } => Ok(Rc::new(Object::Integer(value))),
@@ -59,13 +61,13 @@ pub fn eval_expression(
             Ok(evaluated_block.unwrap_or(Rc::new(Object::Null)))
         }
         ast::Expression::Identifier { value } => {
-            let obj = env.get(&value)?;
+            let obj = read_from_env(&env.borrow(), &value)?;
             Ok(obj.clone())
         }
         ast::Expression::FnLiteral { param_names, body } => Ok(Rc::new(Object::Function {
             body: body.clone(),
             parameter_names: param_names.clone(),
-            env: Environment::new(), // TODO: this is a bug – closures won't capture their env.
+            env: Rc::clone(&env),
         })),
         ast::Expression::CallExpression {
             function,
@@ -74,7 +76,7 @@ pub fn eval_expression(
             let evaluated_arguments = eval_expressions(arguments, env)?;
             match function {
                 ast::CallExpressionFunction::Identifier { value } => {
-                    let func = env.get(&value)?;
+                    let func = read_from_env(&env.borrow(), &value)?;
                     if let Object::Function {
                         parameter_names,
                         body,
@@ -87,7 +89,7 @@ pub fn eval_expression(
                     }
                 }
                 ast::CallExpressionFunction::Literal { param_names, body } => {
-                    call_function(&evaluated_arguments, &param_names, body, env)
+                    call_function(&evaluated_arguments, &param_names, body, &env)
                 }
             }
         }
@@ -96,12 +98,12 @@ pub fn eval_expression(
 
 fn eval_expressions(
     expressions: Vec<ast::Expression>,
-    env: &mut Environment,
+    env: &Rc<RefCell<Environment>>,
 ) -> Result<Vec<Rc<Object>>, String> {
     // TODO: use iterators
     let mut results: Vec<Rc<Object>> = vec![];
     for expression in expressions {
-        let obj = eval_expression(expression, env)?;
+        let obj = eval_expression(expression, &env)?;
         results.push(obj);
     }
     Ok(results)
@@ -111,7 +113,7 @@ fn call_function(
     args: &Vec<Rc<Object>>,
     expected_param_names: &Vec<String>,
     body: ast::BlockStatement,
-    parent_env: &Environment,
+    parent_env: &Rc<RefCell<Environment>>,
 ) -> Result<Rc<Object>, String> {
     if args.len() != expected_param_names.len() {
         return Err(format!(
@@ -120,18 +122,18 @@ fn call_function(
             args.len()
         ));
     }
-    let mut call_env = Environment::new(); // TODO bug, should be copying parent's.
+    let mut call_env = Environment::new_enclosed(Rc::clone(&parent_env));
 
     for (name, obj) in expected_param_names.iter().zip(args) {
         call_env.set(name, Rc::clone(obj));
     }
-    let result = eval_statements(body.statements, &mut call_env)?;
+    let result = eval_statements(body.statements, &Rc::new(RefCell::new(call_env)))?;
     Ok(result.unwrap_or(Rc::new(Object::Null)))
 }
 
 fn eval_statements(
     statements: Vec<ast::Statement>,
-    env: &mut Environment,
+    env: &Rc<RefCell<Environment>>,
 ) -> Result<Option<Rc<Object>>, String> {
     let mut result: Option<Rc<Object>> = None;
     for statement in statements {
@@ -147,7 +149,7 @@ fn eval_statements(
 
 fn eval_statement(
     statement: ast::Statement,
-    env: &mut Environment,
+    env: &Rc<RefCell<Environment>>,
 ) -> Result<Option<Rc<Object>>, String> {
     match statement {
         ast::Statement::Expression { expression } => {
@@ -160,7 +162,7 @@ fn eval_statement(
         }
         ast::Statement::Let { name, right } => {
             let right_obj = eval_expression(right, env)?;
-            env.set(&name, right_obj);
+            env.borrow_mut().set(&name, right_obj);
             Ok(None)
         }
     }
@@ -168,7 +170,7 @@ fn eval_statement(
 
 pub fn eval_program(
     program: ast::Program,
-    env: &mut Environment,
+    env: &Rc<RefCell<Environment>>,
 ) -> Result<Option<Rc<Object>>, String> {
     let evaluated = eval_statements(program.statements, env)?;
     let evaluated: Option<Rc<Object>> = evaluated.map(|o| {
@@ -212,4 +214,11 @@ fn eval_infix(
             left, op, right
         )),
     }
+}
+
+fn read_from_env(env: &Environment, identifier: &str) -> Result<Rc<Object>, String> {
+    env.get(identifier).ok_or(String::from(format!(
+        "The identifier '{}' has not been bound",
+        identifier
+    )))
 }

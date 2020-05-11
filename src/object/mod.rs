@@ -1,6 +1,6 @@
 pub mod environment;
-
 use crate::ast;
+use core::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 
@@ -13,7 +13,7 @@ pub enum Object {
     Function {
         parameter_names: Vec<String>,
         body: ast::BlockStatement,
-        env: environment::Environment,
+        env: Rc<RefCell<environment::Environment>>,
     },
 }
 impl Object {

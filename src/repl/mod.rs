@@ -1,9 +1,9 @@
+use crate::{eval, lexer, object, parser};
+use core::cell::RefCell;
 use io::BufRead;
+use object::environment;
 use std::io;
 use std::rc::Rc;
-
-use crate::{eval, lexer, object, parser};
-use object::environment;
 
 const PROMPT: &str = ">> ";
 
@@ -16,10 +16,10 @@ pub fn start(
     output.write("Type some code!\n".as_bytes())?;
     output.write(PROMPT.as_bytes())?;
     output.flush()?;
-    let mut env = environment::Environment::new();
+    let env = Rc::new(RefCell::new(environment::Environment::new()));
     for line_result in input.lines() {
         let line = line_result.unwrap();
-        match eval_line(line, &mut env) {
+        match eval_line(line, &env) {
             Ok(evaluated) => {
                 if let Some(obj) = evaluated {
                     output.write(format!("{}\n", obj).as_bytes())?;
@@ -39,7 +39,7 @@ pub fn start(
 
 fn eval_line(
     line: String,
-    env: &mut environment::Environment,
+    env: &Rc<RefCell<environment::Environment>>,
 ) -> Result<Option<Rc<object::Object>>, String> {
     let line = line.trim();
     let mut lexer = lexer::new(line);
