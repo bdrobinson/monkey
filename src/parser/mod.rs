@@ -208,7 +208,7 @@ impl Parser<'_> {
                     }
                     ParsedInfix::Call { args } => {
                         left_exp = ast::Expression::CallExpression {
-                            function: expression_to_call_expression_function(left_exp)?,
+                            left: Box::new(left_exp),
                             arguments: args,
                         }
                     }
@@ -383,32 +383,5 @@ fn precedence_for_token_type(token_type: &TokenType) -> Precedence {
         TokenType::Asterisk => Precedence::PRODUCT,
         TokenType::LParen => Precedence::CALL,
         _ => Precedence::LOWEST,
-    }
-}
-
-fn expression_to_call_expression_function(
-    expr: ast::Expression,
-) -> ParserResult<ast::CallExpressionFunction> {
-    match expr {
-        ast::Expression::FnLiteral { param_names, body } => {
-            Ok(ast::CallExpressionFunction::Literal {
-                param_names: param_names,
-                body: body,
-            })
-        }
-        ast::Expression::Identifier { value } => {
-            Ok(ast::CallExpressionFunction::Identifier { value: value })
-        }
-        ast::Expression::CallExpression {
-            function,
-            arguments,
-        } => Ok(ast::CallExpressionFunction::CallExpressionFunction {
-            left_fn: Box::new(function),
-            left_args: arguments,
-        }),
-        _ => Err(format!(
-            "Left side of a call expression must either be a FnLiteral or Identifier. Got {:?}",
-            expr
-        )),
     }
 }

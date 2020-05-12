@@ -69,50 +69,16 @@ pub fn eval_expression(
             parameter_names: param_names.clone(),
             env: Rc::clone(&env),
         })),
-        ast::Expression::CallExpression {
-            function,
-            arguments,
-        } => {
+        ast::Expression::CallExpression { left, arguments } => {
+            let left_evaluated = eval_expression(*left, env)?;
             let evaluated_arguments = eval_expressions(arguments, env)?;
-            match function {
-                ast::CallExpressionFunction::Identifier { value } => {
-                    let func = read_from_env(&env.borrow(), &value)?;
-                    if let Object::Function {
-                        parameter_names,
-                        body,
-                        env,
-                    } = &*func
-                    {
-                        call_function(&evaluated_arguments, &parameter_names, body.clone(), env)
-                    } else {
-                        Err(format!("The identifier '{}' is not a function", value))
-                    }
-                }
-                ast::CallExpressionFunction::Literal { param_names, body } => {
-                    call_function(&evaluated_arguments, &param_names, body, &env)
-                }
-                ast::CallExpressionFunction::CallExpressionFunction { left_fn, left_args } => {
-                    let evaluated_left = eval_expression(
-                        ast::Expression::CallExpression {
-                            arguments: left_args,
-                            function: *left_fn,
-                        },
-                        env,
-                    )?;
-                    if let Object::Function {
-                        parameter_names,
-                        body,
-                        env,
-                    } = &*evaluated_left
-                    {
-                        call_function(&evaluated_arguments, &parameter_names, body.clone(), &env)
-                    } else {
-                        Err(format!(
-                            "The left side of a call expression must be a function. Got {}",
-                            evaluated_left
-                        ))
-                    }
-                }
+            match &*left_evaluated {
+                Object::Function {
+                    parameter_names,
+                    body,
+                    env,
+                } => call_function(&evaluated_arguments, &parameter_names, body.clone(), env),
+                _ => Err(format!("Cannot call {}", left_evaluated)),
             }
         }
     }

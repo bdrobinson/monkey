@@ -55,7 +55,7 @@ pub enum Expression {
         body: BlockStatement,
     },
     CallExpression {
-        function: CallExpressionFunction,
+        left: Box<Expression>,
         arguments: Vec<Expression>,
     },
 }
@@ -87,12 +87,9 @@ impl fmt::Display for Expression {
             Expression::FnLiteral { param_names, body } => {
                 format!("fn({}) {}", param_names.join(", "), body)
             }
-            &Expression::CallExpression {
-                function,
-                arguments,
-            } => format!(
+            &Expression::CallExpression { left, arguments } => format!(
                 "{}({})",
-                function,
+                left,
                 arguments
                     .iter()
                     .map(|a| a.to_string())
@@ -101,48 +98,6 @@ impl fmt::Display for Expression {
             ),
         };
         write!(f, "{}", string_repr)
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum CallExpressionFunction {
-    // Bit annoying to have this duplicated logic but meh
-    Literal {
-        param_names: Vec<String>,
-        body: BlockStatement,
-    },
-    Identifier {
-        value: String,
-    },
-    CallExpressionFunction {
-        left_fn: Box<CallExpressionFunction>,
-        left_args: Vec<Expression>,
-    },
-}
-
-impl Display for CallExpressionFunction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        match self {
-            CallExpressionFunction::Literal { param_names, body } => {
-                write!(f, "fn({}) {}", param_names.join(", "), body)?;
-            }
-            CallExpressionFunction::Identifier { value } => {
-                write!(f, "{}", value)?;
-            }
-            CallExpressionFunction::CallExpressionFunction { left_fn, left_args } => {
-                write!(
-                    f,
-                    "{}({})",
-                    left_fn,
-                    left_args
-                        .iter()
-                        .map(|a| a.to_string())
-                        .collect::<Vec<String>>()
-                        .join(", ")
-                )?;
-            }
-        }
-        Ok(())
     }
 }
 

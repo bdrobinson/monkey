@@ -333,25 +333,25 @@ mod test {
             vec!(
                 ast::Statement::Expression {
                     expression: ast::Expression::CallExpression {
-                        function: ast::CallExpressionFunction::Identifier {
+                        left: Box::new(ast::Expression::Identifier {
                             value: String::from("add")
-                        },
+                        }),
                         arguments: vec!()
                     }
                 },
                 ast::Statement::Expression {
                     expression: ast::Expression::CallExpression {
-                        function: ast::CallExpressionFunction::Identifier {
+                        left: Box::new(ast::Expression::Identifier {
                             value: String::from("add")
-                        },
+                        }),
                         arguments: vec!(ast::Expression::IntegerLiteral { value: 1 })
                     }
                 },
                 ast::Statement::Expression {
                     expression: ast::Expression::CallExpression {
-                        function: ast::CallExpressionFunction::Identifier {
+                        left: Box::new(ast::Expression::Identifier {
                             value: String::from("add")
-                        },
+                        }),
                         arguments: vec!(
                             ast::Expression::Infix {
                                 left: Box::new(ast::Expression::IntegerLiteral { value: 1 }),
@@ -364,10 +364,10 @@ mod test {
                 },
                 ast::Statement::Expression {
                     expression: ast::Expression::CallExpression {
-                        function: ast::CallExpressionFunction::Literal {
+                        left: Box::new(ast::Expression::FnLiteral {
                             param_names: vec![String::from("x"), String::from("y")],
                             body: ast::BlockStatement { statements: vec![] },
-                        },
+                        }),
                         arguments: vec!(ast::Expression::IntegerLiteral { value: 2 })
                     }
                 }
