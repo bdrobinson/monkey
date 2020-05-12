@@ -1,4 +1,4 @@
-use crate::{eval, lexer, object, parser};
+use crate::{errors, eval, lexer, object, parser};
 use core::cell::RefCell;
 use io::BufRead;
 use object::environment;
@@ -40,11 +40,13 @@ pub fn start(
 fn eval_line(
     line: String,
     env: &Rc<RefCell<environment::Environment>>,
-) -> Result<Option<Rc<object::Object>>, String> {
+) -> Result<Option<Rc<object::Object>>, errors::MonkeyError> {
     let line = line.trim();
     let mut lexer = lexer::new(line);
     let mut parser = parser::Parser::new(&mut lexer);
-    let program = parser.parse_program()?;
-    let object = eval::eval_program(program, env)?;
+    let program = parser
+        .parse_program()
+        .map_err(|e| errors::MonkeyError::Parser(e))?;
+    let object = eval::eval_program(program, env).map_err(|e| errors::MonkeyError::Eval(e))?;
     Ok(object)
 }

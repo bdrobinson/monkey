@@ -2,6 +2,7 @@
 mod test {
 
     use crate::ast;
+    use crate::errors;
     use crate::eval;
     use crate::lexer;
     use crate::object::{environment::Environment, Object};
@@ -218,35 +219,35 @@ mod test {
         let tests: Vec<TestErrorCase> = vec![
             TestErrorCase {
                 input: "5 + true;",
-                error_message: "Cannot evaluate infix expression 5 + true",
+                error_message: "Eval error: Cannot evaluate infix expression 5 + true",
             },
             TestErrorCase {
                 input: "5 + true; 5;",
-                error_message: "Cannot evaluate infix expression 5 + true",
+                error_message: "Eval error: Cannot evaluate infix expression 5 + true",
             },
             TestErrorCase {
                 input: "-true",
-                error_message: "The prefix - cannot appear before type Boolean",
+                error_message: "Eval error: The prefix - cannot appear before type Boolean",
             },
             TestErrorCase {
                 input: "true + false;",
-                error_message: "Cannot evaluate infix expression true + false",
+                error_message: "Eval error: Cannot evaluate infix expression true + false",
             },
             TestErrorCase {
                 input: "5; true + false; 5;",
-                error_message: "Cannot evaluate infix expression true + false",
+                error_message: "Eval error: Cannot evaluate infix expression true + false",
             },
             TestErrorCase {
                 input: "if (10 > 1) { true + false; }",
-                error_message: "Cannot evaluate infix expression true + false",
+                error_message: "Eval error: Cannot evaluate infix expression true + false",
             },
             TestErrorCase {
                 input: "!5;",
-                error_message: "The prefix ! cannot appear before type Integer",
+                error_message: "Eval error: The prefix ! cannot appear before type Integer",
             },
             TestErrorCase {
                 input: "foobar;",
-                error_message: "The identifier 'foobar' has not been bound",
+                error_message: "Eval error: The identifier 'foobar' has not been bound",
             },
         ];
         for test in tests {
@@ -254,8 +255,13 @@ mod test {
             let mut parser = parser::Parser::new(&mut lexer);
             let program = parser.parse_program().unwrap();
             let env = Environment::new();
-            let evaluation_result = eval::eval_program(program, &Rc::new(RefCell::new(env)));
-            assert_eq!(evaluation_result, Err(String::from(test.error_message)));
+            let evaluation_result = eval::eval_program(program, &Rc::new(RefCell::new(env)))
+                .map_err(|e| errors::MonkeyError::Eval(e))
+                .unwrap_err();
+            assert_eq!(
+                evaluation_result.to_string(),
+                String::from(test.error_message)
+            );
         }
     }
 

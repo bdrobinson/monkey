@@ -5,7 +5,13 @@ use crate::{
     token::{Token, TokenType},
 };
 
-type ParserResult<T> = Result<T, String>;
+#[derive(Debug)]
+pub enum ParserError {
+    UnexpectedToken { expected: TokenType, actual: Token },
+    InvalidExpression { first_token: Token },
+}
+
+type ParserResult<T> = Result<T, ParserError>;
 
 #[derive(Debug, PartialOrd, PartialEq)]
 enum Precedence {
@@ -52,7 +58,7 @@ impl Parser<'_> {
         self.peek_token = self.lexer.next_token();
     }
 
-    pub fn parse_program(&mut self) -> Result<ast::Program, String> {
+    pub fn parse_program(&mut self) -> Result<ast::Program, ParserError> {
         let mut program = ast::Program { statements: vec![] };
         loop {
             if let Token::Eof = self.cur_token {
@@ -84,7 +90,9 @@ impl Parser<'_> {
 
     fn parse_integer_literal(&mut self) -> ParserResult<ast::Expression> {
         if let Token::Int { literal } = &self.cur_token {
-            let parsed = literal.parse::<i64>().map_err(|_| "Could not parse int")?;
+            // It's impossible for this to go wrong as we've already
+            // established it's an integer.
+            let parsed = literal.parse::<i64>().unwrap();
 
             Ok(ast::Expression::IntegerLiteral { value: parsed })
         } else {
@@ -106,7 +114,7 @@ impl Parser<'_> {
         Ok(ast::Statement::Return { value: expr })
     }
 
-    fn assert_cur_token_type(&self, expected: TokenType) -> Result<(), String> {
+    fn assert_cur_token_type(&self, expected: TokenType) -> Result<(), ParserError> {
         if self.cur_token.token_type() == expected {
             Ok(())
         } else {
@@ -180,10 +188,9 @@ impl Parser<'_> {
             TokenType::LParen => self.parse_grouped_expression(),
             TokenType::If => self.parse_if_expression(),
             TokenType::Function => self.parse_fn_literal(),
-            _ => Err(format!(
-                "An expression cannot start with token type {}",
-                self.cur_token.token_type()
-            )),
+            _ => Err(ParserError::InvalidExpression {
+                first_token: self.cur_token.clone(),
+            }),
         }?;
 
         // This algorithm can essentially iterate horizontally using
@@ -282,10 +289,7 @@ impl Parser<'_> {
         let operator: ast::PrefixOperator = match self.cur_token {
             Token::Bang => Ok(ast::PrefixOperator::Bang),
             Token::Minus => Ok(ast::PrefixOperator::Minus),
-            _ => Err(format!(
-                "Expected prefix operator, got {:?}",
-                self.cur_token
-            )),
+            _ => panic!("Impossible"),
         }?;
         self.next_token();
         let right = self.parse_expression(Precedence::PREFIX)?;
@@ -346,7 +350,9 @@ impl Parser<'_> {
         match self.cur_token {
             Token::True => Ok(ast::Expression::Boolean { value: true }),
             Token::False => Ok(ast::Expression::Boolean { value: false }),
-            _ => Err(String::from("Expected boolean token")),
+            _ => {
+                panic!("Impossible – we wouldn't be calling this unless we'd peeped at the token.")
+            }
         }
     }
 
@@ -370,7 +376,10 @@ impl Parser<'_> {
 }
 
 fn parser_err<T>(expected_type: TokenType, actual: &Token) -> ParserResult<T> {
-    Err(format!("Expected {}, got {:?}", expected_type, actual))
+    Err(ParserError::UnexpectedToken {
+        expected: expected_type,
+        actual: actual.clone(),
+    })
 }
 
 fn precedence_for_token_type(token_type: &TokenType) -> Precedence {

@@ -5,6 +5,11 @@ use std::rc::Rc;
 
 mod test;
 
+#[derive(Debug)]
+pub enum EvalError {
+    Misc(String),
+}
+
 pub fn eval_expression(
     expression: ast::Expression,
     env: &Rc<RefCell<Environment>>,
@@ -159,8 +164,8 @@ fn eval_statement(
 pub fn eval_program(
     program: ast::Program,
     env: &Rc<RefCell<Environment>>,
-) -> Result<Option<Rc<Object>>, String> {
-    let evaluated = eval_statements(program.statements, env)?;
+) -> Result<Option<Rc<Object>>, EvalError> {
+    let evaluated = eval_statements(program.statements, env).map_err(|e| EvalError::Misc(e))?;
     let evaluated: Option<Rc<Object>> = evaluated.map(|o| {
         if let Object::ReturnValue(value) = &*o {
             Rc::clone(value)

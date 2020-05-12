@@ -13,7 +13,7 @@ pub fn token_from_word(literal: &String) -> Option<Token> {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Token {
     Illegal { literal: String },
     Eof,
@@ -78,7 +78,7 @@ impl Token {
     }
 }
 
-#[derive(PartialEq, Hash, Eq)]
+#[derive(PartialEq, Hash, Eq, Debug)]
 pub enum TokenType {
     Illegal,
     Eof,
