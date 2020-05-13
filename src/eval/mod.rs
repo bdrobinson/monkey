@@ -86,6 +86,7 @@ pub fn eval_expression(
                 _ => Err(format!("Cannot call {}", left_evaluated)),
             }
         }
+        ast::Expression::StringLiteral { value } => Ok(Rc::new(Object::String(value))),
     }
 }
 

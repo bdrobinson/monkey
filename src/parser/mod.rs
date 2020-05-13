@@ -188,6 +188,7 @@ impl Parser<'_> {
             TokenType::LParen => self.parse_grouped_expression(),
             TokenType::If => self.parse_if_expression(),
             TokenType::Function => self.parse_fn_literal(),
+            TokenType::String => self.parse_string_literal(),
             _ => Err(ParserError::InvalidExpression {
                 first_token: self.cur_token.clone(),
             }),
@@ -372,6 +373,16 @@ impl Parser<'_> {
 
     fn peek_precedence(&self) -> Precedence {
         precedence_for_token_type(&self.peek_token.token_type())
+    }
+
+    fn parse_string_literal(&mut self) -> ParserResult<ast::Expression> {
+        if let Token::String { literal } = &self.cur_token {
+            Ok(ast::Expression::StringLiteral {
+                value: literal.clone(),
+            })
+        } else {
+            panic!("Impossible")
+        }
     }
 }
 

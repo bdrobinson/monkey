@@ -1,4 +1,3 @@
-
 #[cfg(test)]
 mod test {
 
@@ -9,7 +8,7 @@ mod test {
     #[test]
     fn test_next_token() {
         let input = String::from(
-            "
+            r#"
         let five = 5;
         let ten = 10;
         let add = fn(x, y) {
@@ -27,7 +26,9 @@ mod test {
 
         10 == 10;
         10 != 9;
-        ",
+
+        "hi";
+        "#,
         );
 
         let tests = [
@@ -40,7 +41,6 @@ mod test {
                 literal: String::from("5"),
             },
             Token::Semicolon,
-
             Token::Let,
             Token::Ident {
                 literal: String::from("ten"),
@@ -50,7 +50,6 @@ mod test {
                 literal: String::from("10"),
             },
             Token::Semicolon,
-
             Token::Let,
             Token::Ident {
                 literal: String::from("add"),
@@ -95,7 +94,6 @@ mod test {
             },
             Token::RParen,
             Token::Semicolon,
-
             Token::Bang,
             Token::Minus,
             Token::Slash,
@@ -116,7 +114,6 @@ mod test {
                 literal: String::from("5"),
             },
             Token::Semicolon,
-
             Token::If,
             Token::LParen,
             Token::Int {
@@ -138,7 +135,6 @@ mod test {
             Token::False,
             Token::Semicolon,
             Token::RBrace,
-
             Token::Int {
                 literal: String::from("10"),
             },
@@ -147,7 +143,6 @@ mod test {
                 literal: String::from("10"),
             },
             Token::Semicolon,
-
             Token::Int {
                 literal: String::from("10"),
             },
@@ -156,7 +151,10 @@ mod test {
                 literal: String::from("9"),
             },
             Token::Semicolon,
-
+            Token::String {
+                literal: String::from("hi"),
+            },
+            Token::Semicolon,
             Token::Eof,
         ];
         let mut lexer = lexer::new(&input);

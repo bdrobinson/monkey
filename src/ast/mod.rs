@@ -33,6 +33,9 @@ pub enum Expression {
     IntegerLiteral {
         value: i64,
     },
+    StringLiteral {
+        value: String,
+    },
     Prefix {
         operator: PrefixOperator,
         right: Box<Expression>,
@@ -64,6 +67,7 @@ impl fmt::Display for Expression {
         let string_repr: String = match &self {
             Expression::Identifier { value } => value.clone(),
             Expression::IntegerLiteral { value } => value.to_string(),
+            Expression::StringLiteral { value } => value.clone(),
             Expression::Prefix { operator, right } => format!("({}{})", operator, right),
             Expression::Infix {
                 left,

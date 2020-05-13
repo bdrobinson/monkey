@@ -75,6 +75,9 @@ impl Lexer {
                 } else if is_digit(self.ch) {
                     let literal = self.read_number();
                     return token::Token::Int { literal };
+                } else if self.ch == '"' {
+                    let string = self.read_string();
+                    return token::Token::String { literal: string };
                 } else {
                     return token::Token::Illegal {
                         literal: self.ch.to_string(),
@@ -112,6 +115,17 @@ impl Lexer {
             self.read_char();
         }
         self.input[start_pos..self.position].to_string()
+    }
+
+    fn read_string(&mut self) -> String {
+        self.read_char(); // consume the opening quote
+        let start_pos = self.position;
+        while self.ch != '"' {
+            self.read_char();
+        }
+        let string = self.input[start_pos..self.position].to_string();
+        self.read_char(); // consume the closing quote
+        string
     }
 
     fn peek_char(&self) -> char {

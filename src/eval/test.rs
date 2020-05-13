@@ -360,4 +360,16 @@ mod test {
             assert_eq!(*result, test.output);
         }
     }
+
+    #[test]
+    fn test_string_literals() {
+        let tests: Vec<TestEvalAnyCase> = vec![TestEvalAnyCase {
+            input: "\"ahoy shipmates\";",
+            output: Object::String(String::from("ahoy shipmates")),
+        }];
+        for test in tests {
+            let result = eval_program(test.input);
+            assert_eq!(*result, test.output);
+        }
+    }
 }

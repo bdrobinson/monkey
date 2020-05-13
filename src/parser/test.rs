@@ -129,6 +129,30 @@ mod test {
         )
     }
 
+    #[test]
+    fn test_string_literal_expression() {
+        let input = r#"
+            "hi";
+            "there";
+        "#;
+        let program = read_program(input);
+        assert_eq!(
+            program.statements,
+            vec![
+                ast::Statement::Expression {
+                    expression: ast::Expression::StringLiteral {
+                        value: String::from("hi")
+                    }
+                },
+                ast::Statement::Expression {
+                    expression: ast::Expression::StringLiteral {
+                        value: String::from("there")
+                    }
+                },
+            ]
+        )
+    }
+
     fn construct_simple_infix_test_case(
         left: i64,
         op: ast::InfixOperator,

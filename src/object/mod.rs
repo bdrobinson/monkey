@@ -8,6 +8,7 @@ use std::rc::Rc;
 pub enum Object {
     Integer(i64),
     Boolean(bool),
+    String(String),
     Null,
     ReturnValue(Rc<Object>),
     Function {
@@ -23,6 +24,7 @@ impl Object {
             Object::Boolean(_) => "Boolean",
             Object::Null => "Null",
             Object::ReturnValue(_) => "Return value",
+            Object::String(_) => "String",
             Object::Function {
                 parameter_names: _,
                 body: _,
@@ -40,6 +42,7 @@ impl PartialEq for Object {
             (Object::Boolean(l), Object::Boolean(r)) => l == r,
             (Object::Null, Object::Null) => true,
             (Object::ReturnValue(l), Object::ReturnValue(r)) => l == r,
+            (Object::String(l), Object::String(r)) => l == r,
             _ => false,
         }
     }
@@ -51,6 +54,7 @@ impl fmt::Display for Object {
             Object::Integer(value) => value.to_string(),
             Object::Boolean(value) => value.to_string(),
             Object::Null => String::from("null"),
+            Object::String(value) => value.clone(),
             Object::ReturnValue(obj) => String::from(format!("Return value: {}", obj)),
             Object::Function {
                 parameter_names: _,
