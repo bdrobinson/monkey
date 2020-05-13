@@ -203,6 +203,9 @@ fn eval_infix(
         (Object::Integer(left), ast::InfixOperator::Lt, Object::Integer(right)) => {
             Ok(Object::Boolean(left < right))
         }
+        (Object::String(left), ast::InfixOperator::Plus, Object::String(right)) => {
+            Ok(Object::String(format!("{}{}", left, right)))
+        }
         (left, op, right) => Err(format!(
             "Cannot evaluate infix expression {} {} {}",
             left, op, right
