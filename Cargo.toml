@@ -6,3 +6,12 @@ edition = "2018"
 
 [dependencies]
 pretty_assertions = "0.6.1"
+
+[lib]
+name = "monkey_interpreter"           # The name of the target.
+path = "src/interpreter.rs"    # The source file of the target.
+doc = true             # Is documented by default.
+
+[[bin]]
+name = "monkey_cli"
+path = "src/main.rs"

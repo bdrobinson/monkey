@@ -1,11 +1,4 @@
-mod ast;
-mod errors;
-mod eval;
-mod lexer;
-mod object;
-mod parser;
 mod repl;
-mod token;
 
 use std::io;
 

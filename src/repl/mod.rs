@@ -1,6 +1,6 @@
-use crate::{errors, eval, lexer, object, parser};
 use core::cell::RefCell;
 use io::BufRead;
+use monkey_interpreter::{errors, eval, lexer, object, parser};
 use object::environment;
 use std::io;
 use std::rc::Rc;
