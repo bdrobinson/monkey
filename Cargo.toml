@@ -1,11 +1,12 @@
 [package]
 name = "monkey"
 version = "0.1.0"
-authors = ["Ben Robinson <ben@joinfoodchain.com>"]
+authors = ["Ben Robinson <ben@txrx.org.uk>"]
 edition = "2018"
 
 [dependencies]
 pretty_assertions = "0.6.1"
+clap = "3.0.0-beta.1"
 
 [lib]
 name = "monkey_interpreter"           # The name of the target.
