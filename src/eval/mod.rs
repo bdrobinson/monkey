@@ -62,7 +62,7 @@ pub fn eval_expression(
                 (false, Some(alternative)) => alternative,
                 (false, None) => ast::BlockStatement { statements: vec![] },
             };
-            let evaluated_block = eval_statements(block_to_eval.statements, env)?;
+            let evaluated_block = eval_statements_with_inner_env(block_to_eval.statements, env)?;
             Ok(evaluated_block.unwrap_or(Rc::new(Object::Null)))
         }
         ast::Expression::Identifier { value } => {
@@ -87,9 +87,8 @@ pub fn eval_expression(
             }
         }
         ast::Expression::StringLiteral { value } => Ok(Rc::new(Object::String(value))),
-        ast::Expression::Block { statements } => {
-            eval_statements(statements, env).map(|opt| opt.unwrap_or(Rc::new(Object::Null)))
-        }
+        ast::Expression::Block { statements } => eval_statements_with_inner_env(statements, env)
+            .map(|opt| opt.unwrap_or(Rc::new(Object::Null))),
     }
 }
 
@@ -119,7 +118,7 @@ fn call_function(
             args.len()
         ));
     }
-    let mut call_env = Environment::new_enclosed(Rc::clone(&parent_env));
+    let mut call_env = Environment::new_enclosed(Rc::clone(parent_env));
 
     for (name, obj) in expected_param_names.iter().zip(args) {
         call_env.set(name, Rc::clone(obj));
@@ -142,6 +141,16 @@ fn eval_statements(
         }
     }
     Ok(result)
+}
+
+fn eval_statements_with_inner_env(
+    statements: Vec<ast::Statement>,
+    parent_env: &Rc<RefCell<Environment>>,
+) -> Result<Option<Rc<Object>>, String> {
+    let inner_env = Rc::new(RefCell::new(Environment::new_enclosed(Rc::clone(
+        parent_env,
+    ))));
+    eval_statements(statements, &inner_env)
 }
 
 fn eval_statement(

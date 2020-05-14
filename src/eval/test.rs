@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod test {
 
-    use crate::ast;
     use crate::errors;
     use crate::eval;
     use crate::lexer;
@@ -43,10 +42,7 @@ mod test {
             },
         ];
         for test in tests {
-            assert_eq!(
-                Object::Integer(test.output),
-                *eval_expression_statement(test.input)
-            );
+            assert_eq!(Object::Integer(test.output), *eval_program(test.input));
         }
     }
 
@@ -107,10 +103,7 @@ mod test {
             },
         ];
         for test in tests {
-            assert_eq!(
-                Object::Boolean(test.output),
-                *eval_expression_statement(test.input)
-            );
+            assert_eq!(Object::Boolean(test.output), *eval_program(test.input));
         }
     }
 
@@ -145,22 +138,29 @@ mod test {
                 input: "if (false) { 2 } else { 3 }",
                 output: Object::Integer(3),
             },
+            TestEvalAnyCase {
+                input: "
+                let a = 3;
+                if (true) { 
+                    let a = 5;
+                }
+                a
+                ",
+                output: Object::Integer(3),
+            },
+            TestEvalAnyCase {
+                input: "
+                let a = 3;
+                if (false) {} else { 
+                    let a = 5;
+                }
+                a
+                ",
+                output: Object::Integer(3),
+            },
         ];
         for test in tests {
-            assert_eq!(test.output, *eval_expression_statement(test.input));
-        }
-    }
-
-    fn eval_expression_statement(input: &'static str) -> Rc<Object> {
-        let mut lexer = lexer::new(input);
-        let mut parser = parser::Parser::new(&mut lexer);
-        let mut program = parser.parse_program().unwrap();
-        let env = Environment::new();
-        let statement: ast::Statement = program.statements.remove(0);
-        if let ast::Statement::Expression { expression } = statement {
-            eval::eval_expression(expression, &Rc::new(RefCell::new(env))).unwrap()
-        } else {
-            panic!("Expected expression statement")
+            assert_eq!(test.output, *eval_program(test.input));
         }
     }
 
@@ -284,16 +284,6 @@ mod test {
                 input: "let a = 5; let b = a; let c = a + b + 5; c;",
                 output: Object::Integer(15),
             },
-            // Annoying but that seems to be the behaviour we've gone for for now.
-            TestEvalAnyCase {
-                input: "
-                    if (true) {
-                        let a = 3;
-                    }
-                    a;
-                ",
-                output: Object::Integer(3),
-            },
         ];
         for test in tests {
             let result = eval_program(test.input);
@@ -381,10 +371,22 @@ mod test {
 
     #[test]
     fn test_block_expressions() {
-        let tests: Vec<TestEvalAnyCase> = vec![TestEvalAnyCase {
-            input: "let a = { 2; 3; }; a",
-            output: Object::Integer(3),
-        }];
+        let tests: Vec<TestEvalAnyCase> = vec![
+            TestEvalAnyCase {
+                input: "let a = { 2; 3; }; a",
+                output: Object::Integer(3),
+            },
+            TestEvalAnyCase {
+                input: "
+            let a = 3;
+            { 
+                let a = 5;
+            }
+            a
+            ",
+                output: Object::Integer(3),
+            },
+        ];
         for test in tests {
             let result = eval_program(test.input);
             assert_eq!(*result, test.output);
