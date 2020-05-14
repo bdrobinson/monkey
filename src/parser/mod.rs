@@ -186,6 +186,11 @@ impl Parser<'_> {
             TokenType::Bang | TokenType::Minus => self.parse_prefix_expression(),
             TokenType::True | TokenType::False => self.parse_boolean_expression(),
             TokenType::LParen => self.parse_grouped_expression(),
+            TokenType::LBrace => self
+                .parse_block_statement()
+                .map(|block| ast::Expression::Block {
+                    statements: block.statements,
+                }),
             TokenType::If => self.parse_if_expression(),
             TokenType::Function => self.parse_fn_literal(),
             TokenType::String => self.parse_string_literal(),
@@ -290,7 +295,7 @@ impl Parser<'_> {
         let operator: ast::PrefixOperator = match self.cur_token {
             Token::Bang => Ok(ast::PrefixOperator::Bang),
             Token::Minus => Ok(ast::PrefixOperator::Minus),
-            _ => panic!("Impossible"),
+            _ => unreachable!(),
         }?;
         self.next_token();
         let right = self.parse_expression(Precedence::PREFIX)?;
@@ -351,9 +356,7 @@ impl Parser<'_> {
         match self.cur_token {
             Token::True => Ok(ast::Expression::Boolean { value: true }),
             Token::False => Ok(ast::Expression::Boolean { value: false }),
-            _ => {
-                panic!("Impossible – we wouldn't be calling this unless we'd peeped at the token.")
-            }
+            _ => unreachable!(),
         }
     }
 
@@ -381,7 +384,7 @@ impl Parser<'_> {
                 value: literal.clone(),
             })
         } else {
-            panic!("Impossible")
+            unreachable!()
         }
     }
 }

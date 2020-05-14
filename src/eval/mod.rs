@@ -87,6 +87,9 @@ pub fn eval_expression(
             }
         }
         ast::Expression::StringLiteral { value } => Ok(Rc::new(Object::String(value))),
+        ast::Expression::Block { statements } => {
+            eval_statements(statements, env).map(|opt| opt.unwrap_or(Rc::new(Object::Null)))
+        }
     }
 }
 

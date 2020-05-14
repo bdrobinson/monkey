@@ -61,6 +61,9 @@ pub enum Expression {
         left: Box<Expression>,
         arguments: Vec<Expression>,
     },
+    Block {
+        statements: Vec<Statement>,
+    },
 }
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -100,6 +103,7 @@ impl fmt::Display for Expression {
                     .collect::<Vec<String>>()
                     .join(", ")
             ),
+            Expression::Block { .. } => String::from("Block statement"),
         };
         write!(f, "{}", string_repr)
     }

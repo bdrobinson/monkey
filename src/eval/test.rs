@@ -378,4 +378,16 @@ mod test {
             assert_eq!(*result, test.output);
         }
     }
+
+    #[test]
+    fn test_block_expressions() {
+        let tests: Vec<TestEvalAnyCase> = vec![TestEvalAnyCase {
+            input: "let a = { 2; 3; }; a",
+            output: Object::Integer(3),
+        }];
+        for test in tests {
+            let result = eval_program(test.input);
+            assert_eq!(*result, test.output);
+        }
+    }
 }

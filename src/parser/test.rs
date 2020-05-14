@@ -398,4 +398,35 @@ mod test {
             )
         )
     }
+
+    #[test]
+    fn test_block_expression() {
+        let input = "
+        let a = {
+            2;
+            { 3 };
+        };
+        ";
+        let program = read_program(input);
+        assert_eq!(
+            program.statements,
+            vec!(ast::Statement::Let {
+                name: String::from("a"),
+                right: ast::Expression::Block {
+                    statements: vec![
+                        ast::Statement::Expression {
+                            expression: ast::Expression::IntegerLiteral { value: 2 }
+                        },
+                        ast::Statement::Expression {
+                            expression: ast::Expression::Block {
+                                statements: vec![ast::Statement::Expression {
+                                    expression: ast::Expression::IntegerLiteral { value: 3 }
+                                }]
+                            }
+                        }
+                    ]
+                }
+            })
+        )
+    }
 }

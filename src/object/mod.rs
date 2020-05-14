@@ -25,11 +25,7 @@ impl Object {
             Object::Null => "Null",
             Object::ReturnValue(_) => "Return value",
             Object::String(_) => "String",
-            Object::Function {
-                parameter_names: _,
-                body: _,
-                env: _,
-            } => "Function",
+            Object::Function { .. } => "Function",
         };
         String::from(string)
     }
