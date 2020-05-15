@@ -2,7 +2,12 @@ pub mod environment;
 use crate::ast;
 use core::cell::RefCell;
 use std::fmt;
+use std::fmt::Debug;
 use std::rc::Rc;
+
+pub trait BuiltinFunction: Debug {
+    fn run(&self, arguments: &[Rc<Object>]) -> Result<Rc<Object>, String>;
+}
 
 #[derive(Debug)]
 pub enum Object {
@@ -16,6 +21,7 @@ pub enum Object {
         body: ast::BlockStatement,
         env: Rc<RefCell<environment::Environment>>,
     },
+    BuiltinFunction(Box<dyn BuiltinFunction>),
 }
 impl Object {
     pub fn type_name(&self) -> String {
@@ -26,6 +32,7 @@ impl Object {
             Object::ReturnValue(_) => "Return value",
             Object::String(_) => "String",
             Object::Function { .. } => "Function",
+            Object::BuiltinFunction(..) => "BuiltinFunction",
         };
         String::from(string)
     }
@@ -52,11 +59,8 @@ impl fmt::Display for Object {
             Object::Null => String::from("null"),
             Object::String(value) => value.clone(),
             Object::ReturnValue(obj) => String::from(format!("Return value: {}", obj)),
-            Object::Function {
-                parameter_names: _,
-                body: _,
-                env: _,
-            } => String::from("Function"),
+            Object::Function { .. } => String::from("Function"),
+            Object::BuiltinFunction(..) => String::from("Builtin Function"),
         };
         write!(f, "{}", repr)?;
         Ok(())

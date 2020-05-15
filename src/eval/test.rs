@@ -392,4 +392,16 @@ mod test {
             assert_eq!(*result, test.output);
         }
     }
+
+    #[test]
+    fn test_builtins() {
+        let tests: Vec<TestEvalAnyCase> = vec![TestEvalAnyCase {
+            input: "len(\"ahoy\")",
+            output: Object::Integer(4),
+        }];
+        for test in tests {
+            let result = eval_program(test.input);
+            assert_eq!(*result, test.output);
+        }
+    }
 }

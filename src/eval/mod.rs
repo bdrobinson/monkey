@@ -3,7 +3,10 @@ use crate::object::{environment::Environment, Object};
 use core::cell::RefCell;
 use std::rc::Rc;
 
+mod builtins;
 mod test;
+
+use builtins::get_builtin_fn;
 
 #[derive(Debug)]
 pub enum EvalError {
@@ -83,6 +86,7 @@ pub fn eval_expression(
                     body,
                     env,
                 } => call_function(&evaluated_arguments, &parameter_names, body.clone(), env),
+                Object::BuiltinFunction(builtin) => builtin.run(&evaluated_arguments),
                 _ => Err(format!("Cannot call {}", left_evaluated)),
             }
         }
@@ -226,8 +230,10 @@ fn eval_infix(
 }
 
 fn read_from_env(env: &Environment, identifier: &str) -> Result<Rc<Object>, String> {
-    env.get(identifier).ok_or(String::from(format!(
-        "The identifier '{}' has not been bound",
-        identifier
-    )))
+    env.get(identifier)
+        .or(get_builtin_fn(identifier).map(|f| Rc::new(Object::BuiltinFunction(f))))
+        .ok_or(String::from(format!(
+            "The identifier '{}' has not been bound",
+            identifier
+        )))
 }
