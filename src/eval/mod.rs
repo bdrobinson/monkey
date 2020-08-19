@@ -13,24 +13,27 @@ pub enum EvalError {
     Misc(String),
 }
 
-pub fn eval_expression(
-    expression: ast::Expression,
-    env: &Rc<RefCell<Environment>>,
-) -> Result<Rc<Object>, String> {
+const EMPTY_BLOCK: ast::BlockStatement = ast::BlockStatement { statements: vec![] };
+const EMPTY_BLOCK_REF: &ast::BlockStatement = &EMPTY_BLOCK;
+
+pub fn eval_expression<'a>(
+    expression: &'a ast::Expression,
+    env: Rc<RefCell<Environment<'a>>>,
+) -> Result<Rc<Object<'a>>, String> {
     match expression {
-        ast::Expression::IntegerLiteral { value } => Ok(Rc::new(Object::Integer(value))),
+        ast::Expression::IntegerLiteral { value } => Ok(Rc::new(Object::Integer(value.clone()))),
         ast::Expression::Infix {
             left,
             operator,
             right,
         } => {
-            let left = eval_expression(*left, env)?;
-            let right = eval_expression(*right, env)?;
+            let left = eval_expression(left, Rc::clone(&env))?;
+            let right = eval_expression(right, Rc::clone(&env))?;
             eval_infix(left, operator, right).map(|exp| Rc::new(exp))
         }
-        ast::Expression::Boolean { value } => Ok(Rc::new(Object::Boolean(value))),
+        ast::Expression::Boolean { value } => Ok(Rc::new(Object::Boolean(value.clone()))),
         ast::Expression::Prefix { operator, right } => {
-            let object = eval_expression(*right, env)?;
+            let object = eval_expression(right, env)?;
             match (&operator, &*object) {
                 (ast::PrefixOperator::Minus, Object::Integer(value)) => {
                     Ok(Rc::new(Object::Integer(-value)))
@@ -50,7 +53,7 @@ pub fn eval_expression(
             consequence,
             alternative,
         } => {
-            let condition = eval_expression(*condition, env)?;
+            let condition = eval_expression(condition, Rc::clone(&env))?;
             let condition = if let Object::Boolean(value) = *condition {
                 value
             } else {
@@ -63,58 +66,64 @@ pub fn eval_expression(
             let block_to_eval = match (condition, alternative) {
                 (true, _) => consequence,
                 (false, Some(alternative)) => alternative,
-                (false, None) => ast::BlockStatement { statements: vec![] },
+                (false, None) => EMPTY_BLOCK_REF,
             };
-            let evaluated_block = eval_statements_with_inner_env(block_to_eval.statements, env)?;
+            let evaluated_block =
+                eval_statements_with_inner_env(&block_to_eval.statements, Rc::clone(&env))?;
             Ok(evaluated_block.unwrap_or(Rc::new(Object::Null)))
         }
         ast::Expression::Identifier { value } => {
             let obj = read_from_env(&env.borrow(), &value)?;
-            Ok(obj.clone())
+            Ok(obj)
         }
         ast::Expression::FnLiteral { param_names, body } => Ok(Rc::new(Object::Function {
-            body: body.clone(),
+            body: body,
             parameter_names: param_names.clone(),
             env: Rc::clone(&env),
         })),
         ast::Expression::CallExpression { left, arguments } => {
-            let left_evaluated = eval_expression(*left, env)?;
-            let evaluated_arguments = eval_expressions(arguments, env)?;
+            let left_evaluated = eval_expression(left, Rc::clone(&env))?;
+            let evaluated_arguments = eval_expressions(arguments, Rc::clone(&env))?;
             match &*left_evaluated {
                 Object::Function {
                     parameter_names,
                     body,
                     env,
-                } => call_function(&evaluated_arguments, &parameter_names, body.clone(), env),
+                } => call_function(
+                    evaluated_arguments,
+                    &parameter_names,
+                    body.clone(),
+                    Rc::clone(env),
+                ),
                 Object::BuiltinFunction(builtin) => builtin.run(&evaluated_arguments),
                 _ => Err(format!("Cannot call {}", left_evaluated)),
             }
         }
-        ast::Expression::StringLiteral { value } => Ok(Rc::new(Object::String(value))),
+        ast::Expression::StringLiteral { value } => Ok(Rc::new(Object::String(value.clone()))),
         ast::Expression::Block { statements } => eval_statements_with_inner_env(statements, env)
             .map(|opt| opt.unwrap_or(Rc::new(Object::Null))),
     }
 }
 
-fn eval_expressions(
-    expressions: Vec<ast::Expression>,
-    env: &Rc<RefCell<Environment>>,
-) -> Result<Vec<Rc<Object>>, String> {
+fn eval_expressions<'a>(
+    expressions: &'a [ast::Expression],
+    env: Rc<RefCell<Environment<'a>>>,
+) -> Result<Vec<Rc<Object<'a>>>, String> {
     // TODO: use iterators
     let mut results: Vec<Rc<Object>> = vec![];
     for expression in expressions {
-        let obj = eval_expression(expression, &env)?;
+        let obj = eval_expression(expression, Rc::clone(&env))?;
         results.push(obj);
     }
     Ok(results)
 }
 
-fn call_function(
-    args: &Vec<Rc<Object>>,
+fn call_function<'a>(
+    args: Vec<Rc<Object<'a>>>,
     expected_param_names: &Vec<String>,
-    body: ast::BlockStatement,
-    parent_env: &Rc<RefCell<Environment>>,
-) -> Result<Rc<Object>, String> {
+    body: &'a ast::BlockStatement,
+    parent_env: Rc<RefCell<Environment<'a>>>,
+) -> Result<Rc<Object<'a>>, String> {
     if args.len() != expected_param_names.len() {
         return Err(format!(
             "Expected {} args, got {}",
@@ -122,22 +131,22 @@ fn call_function(
             args.len()
         ));
     }
-    let mut call_env = Environment::new_enclosed(Rc::clone(parent_env));
+    let mut call_env = Environment::new_enclosed(Rc::clone(&parent_env));
 
     for (name, obj) in expected_param_names.iter().zip(args) {
-        call_env.set(name, Rc::clone(obj));
+        call_env.set(name, Rc::clone(&obj));
     }
-    let result = eval_statements(body.statements, &Rc::new(RefCell::new(call_env)))?;
+    let result = eval_statements(&body.statements, Rc::new(RefCell::new(call_env)))?;
     Ok(result.unwrap_or(Rc::new(Object::Null)))
 }
 
-fn eval_statements(
-    statements: Vec<ast::Statement>,
-    env: &Rc<RefCell<Environment>>,
-) -> Result<Option<Rc<Object>>, String> {
+fn eval_statements<'a>(
+    statements: &'a [ast::Statement],
+    env: Rc<RefCell<Environment<'a>>>,
+) -> Result<Option<Rc<Object<'a>>>, String> {
     let mut result: Option<Rc<Object>> = None;
     for statement in statements {
-        result = eval_statement(statement, env)?;
+        result = eval_statement(statement, Rc::clone(&env))?;
         if let Some(evaluated_statement) = &result {
             if matches!(&**evaluated_statement, Object::ReturnValue(_)) {
                 break;
@@ -147,42 +156,45 @@ fn eval_statements(
     Ok(result)
 }
 
-fn eval_statements_with_inner_env(
-    statements: Vec<ast::Statement>,
-    parent_env: &Rc<RefCell<Environment>>,
-) -> Result<Option<Rc<Object>>, String> {
+fn eval_statements_with_inner_env<'a>(
+    statements: &'a [ast::Statement],
+    parent_env: Rc<RefCell<Environment<'a>>>,
+) -> Result<Option<Rc<Object<'a>>>, String> {
     let inner_env = Rc::new(RefCell::new(Environment::new_enclosed(Rc::clone(
-        parent_env,
+        &parent_env,
     ))));
-    eval_statements(statements, &inner_env)
+    eval_statements(statements, inner_env)
 }
 
-fn eval_statement(
-    statement: ast::Statement,
-    env: &Rc<RefCell<Environment>>,
-) -> Result<Option<Rc<Object>>, String> {
+fn eval_statement<'a>(
+    statement: &'a ast::Statement,
+    env: Rc<RefCell<Environment<'a>>>,
+) -> Result<Option<Rc<Object<'a>>>, String> {
     match statement {
         ast::Statement::Expression { expression } => {
-            let object = eval_expression(expression, env)?;
+            let object = eval_expression(expression, Rc::clone(&env))?;
             Ok(Some(object))
         }
         ast::Statement::Return { value } => {
-            let contained_value = eval_expression(value, env)?;
+            let contained_value = eval_expression(value, Rc::clone(&env))?;
             Ok(Some(Rc::new(Object::ReturnValue(contained_value))))
         }
         ast::Statement::Let { name, right } => {
-            let right_obj = eval_expression(right, env)?;
+            let right_obj = eval_expression(right, Rc::clone(&env))?;
             env.borrow_mut().set(&name, right_obj);
             Ok(None)
         }
     }
 }
 
-pub fn eval_program(
-    program: ast::Program,
-    env: &Rc<RefCell<Environment>>,
-) -> Result<Option<Rc<Object>>, EvalError> {
-    let evaluated = eval_statements(program.statements, env).map_err(|e| EvalError::Misc(e))?;
+pub fn eval_program<'prog, 'env>(
+    program: &'prog ast::Program,
+    env: Rc<RefCell<Environment<'env>>>,
+) -> Result<Option<Rc<Object<'env>>>, EvalError>
+where
+    'prog: 'env,
+{
+    let evaluated = eval_statements(&program.statements, env).map_err(|e| EvalError::Misc(e))?;
     let evaluated: Option<Rc<Object>> = evaluated.map(|o| {
         if let Object::ReturnValue(value) = &*o {
             Rc::clone(value)
@@ -193,11 +205,11 @@ pub fn eval_program(
     Ok(evaluated)
 }
 
-fn eval_infix(
-    left: Rc<Object>,
-    op: ast::InfixOperator,
-    right: Rc<Object>,
-) -> Result<Object, String> {
+fn eval_infix<'a>(
+    left: Rc<Object<'a>>,
+    op: &ast::InfixOperator,
+    right: Rc<Object<'a>>,
+) -> Result<Object<'a>, String> {
     match (&*left, &op, &*right) {
         (_, ast::InfixOperator::Eq, _) => Ok(Object::Boolean(left == right)),
         (_, ast::InfixOperator::NotEq, _) => Ok(Object::Boolean(left != right)),
@@ -229,7 +241,7 @@ fn eval_infix(
     }
 }
 
-fn read_from_env(env: &Environment, identifier: &str) -> Result<Rc<Object>, String> {
+fn read_from_env<'a>(env: &Environment<'a>, identifier: &str) -> Result<Rc<Object<'a>>, String> {
     env.get(identifier)
         .or(get_builtin_fn(identifier).map(|f| Rc::new(Object::BuiltinFunction(f))))
         .ok_or(String::from(format!(

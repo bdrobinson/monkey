@@ -5,7 +5,7 @@ use std::rc::Rc;
 #[derive(Debug)]
 struct Len;
 impl BuiltinFunction for Len {
-    fn run(&self, arguments: &[Rc<Object>]) -> Result<Rc<Object>, String> {
+    fn run<'a>(&self, arguments: &[Rc<Object<'a>>]) -> Result<Rc<Object<'a>>, String> {
         if arguments.len() != 1 {
             return Err(String::from("len takes exactly 1 argument"));
         }
@@ -22,7 +22,7 @@ impl BuiltinFunction for Len {
 #[derive(Debug)]
 struct Print;
 impl BuiltinFunction for Print {
-    fn run(&self, arguments: &[Rc<Object>]) -> Result<Rc<Object>, String> {
+    fn run<'a>(&self, arguments: &[Rc<Object<'a>>]) -> Result<Rc<Object<'a>>, String> {
         if arguments.len() != 1 {
             return Err(String::from("print takes exactly 1 argument"));
         }

@@ -2,6 +2,7 @@ use crate::eval::EvalError;
 use crate::parser::ParserError;
 use core::fmt::Display;
 
+#[derive(Debug)]
 pub enum MonkeyError {
     Parser(ParserError),
     Eval(EvalError),

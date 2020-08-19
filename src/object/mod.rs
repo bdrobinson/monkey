@@ -6,24 +6,24 @@ use std::fmt::Debug;
 use std::rc::Rc;
 
 pub trait BuiltinFunction: Debug {
-    fn run(&self, arguments: &[Rc<Object>]) -> Result<Rc<Object>, String>;
+    fn run<'a>(&self, arguments: &[Rc<Object<'a>>]) -> Result<Rc<Object<'a>>, String>;
 }
 
 #[derive(Debug)]
-pub enum Object {
+pub enum Object<'a> {
     Integer(i64),
     Boolean(bool),
     String(String),
     Null,
-    ReturnValue(Rc<Object>),
+    ReturnValue(Rc<Object<'a>>),
     Function {
         parameter_names: Vec<String>,
-        body: ast::BlockStatement,
-        env: Rc<RefCell<environment::Environment>>,
+        body: &'a ast::BlockStatement,
+        env: Rc<RefCell<environment::Environment<'a>>>,
     },
     BuiltinFunction(Box<dyn BuiltinFunction>),
 }
-impl Object {
+impl<'a> Object<'a> {
     pub fn type_name(&self) -> String {
         let string = match self {
             Object::Integer(_) => "Integer",
@@ -38,8 +38,8 @@ impl Object {
     }
 }
 
-impl PartialEq for Object {
-    fn eq(&self, rhs: &Object) -> bool {
+impl<'a> PartialEq for Object<'a> {
+    fn eq(&self, rhs: &Object<'a>) -> bool {
         match (self, rhs) {
             (Object::Integer(l), Object::Integer(r)) => l == r,
             (Object::Boolean(l), Object::Boolean(r)) => l == r,
@@ -51,7 +51,7 @@ impl PartialEq for Object {
     }
 }
 
-impl fmt::Display for Object {
+impl fmt::Display for Object<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         let repr: String = match self {
             Object::Integer(value) => value.to_string(),

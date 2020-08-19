@@ -9,192 +9,142 @@ mod test {
     use core::cell::RefCell;
     use std::rc::Rc;
 
-    struct TestEvalIntCase {
-        input: &'static str,
-        output: i64,
-    }
     #[test]
     fn test_eval_integer_expression() {
-        let tests: Vec<TestEvalIntCase> = vec![
-            TestEvalIntCase {
-                input: "5",
-                output: 5,
-            },
-            TestEvalIntCase {
-                input: "10",
-                output: 10,
-            },
-            TestEvalIntCase {
-                input: "10 + 15",
-                output: 25,
-            },
-            TestEvalIntCase {
-                input: "2 - 12",
-                output: -10,
-            },
-            TestEvalIntCase {
-                input: "5 + 10 / 2 ",
-                output: 10,
-            },
-            TestEvalIntCase {
-                input: "-5",
-                output: -5,
-            },
+        let tests: Vec<TestCase> = vec![
+            TestCase::int("5", 5),
+            TestCase::int("10", 10),
+            TestCase::int("10 + 15", 25),
+            TestCase::int("2 - 12", -10),
+            TestCase::int("5 + 10 / 2 ", 10),
+            TestCase::int("-5", -5),
         ];
         for test in tests {
-            assert_eq!(Object::Integer(test.output), *eval_program(test.input));
+            run_test_case(test);
         }
     }
 
-    struct TestEvalBoolCase {
-        input: &'static str,
-        output: bool,
+    struct TestCase<'a> {
+        code: &'a str,
+        value: TestCaseValue,
     }
+    impl<'a> TestCase<'a> {
+        fn int(code: &'a str, i: i64) -> TestCase<'a> {
+            TestCase {
+                code,
+                value: TestCaseValue::Int(i),
+            }
+        }
+        fn bool(code: &'a str, i: bool) -> TestCase<'a> {
+            TestCase {
+                code,
+                value: TestCaseValue::Bool(i),
+            }
+        }
+        fn null(code: &'a str) -> TestCase<'a> {
+            TestCase {
+                code,
+                value: TestCaseValue::Null,
+            }
+        }
+        fn string(code: &'a str, string: String) -> TestCase<'a> {
+            TestCase {
+                code,
+                value: TestCaseValue::Str(string),
+            }
+        }
+    }
+
+    fn run_test_case(case: TestCase) {
+        let mut lexer = lexer::new(case.code);
+        let mut parser = parser::Parser::new(&mut lexer);
+        let program = parser.parse_program().unwrap();
+        let env = Environment::new();
+        let result = eval::eval_program(&program, Rc::new(RefCell::new(env)))
+            .unwrap()
+            .unwrap();
+        let expected = match case.value {
+            TestCaseValue::Bool(b) => Object::Boolean(b),
+            TestCaseValue::Int(i) => Object::Integer(i),
+            TestCaseValue::Null => Object::Null,
+            TestCaseValue::Str(st) => Object::String(st),
+        };
+        assert_eq!(*result, expected);
+        println!("{}", program);
+    }
+
+    enum TestCaseValue {
+        Int(i64),
+        Bool(bool),
+        Null,
+        Str(String),
+    }
+
     #[test]
     fn test_eval_boolean_expression() {
-        let tests: Vec<TestEvalBoolCase> = vec![
-            TestEvalBoolCase {
-                input: "true",
-                output: true,
-            },
-            TestEvalBoolCase {
-                input: "false",
-                output: false,
-            },
-            TestEvalBoolCase {
-                input: "2 < 3",
-                output: true,
-            },
-            TestEvalBoolCase {
-                input: "2 < 1",
-                output: false,
-            },
-            TestEvalBoolCase {
-                input: "2 > 3",
-                output: false,
-            },
-            TestEvalBoolCase {
-                input: "2 > 1",
-                output: true,
-            },
-            TestEvalBoolCase {
-                input: "!true",
-                output: false,
-            },
-            TestEvalBoolCase {
-                input: "!false",
-                output: true,
-            },
-            TestEvalBoolCase {
-                input: "!!true",
-                output: true,
-            },
-            TestEvalBoolCase {
-                input: "!!false",
-                output: false,
-            },
-            TestEvalBoolCase {
-                input: "true == true",
-                output: true,
-            },
-            TestEvalBoolCase {
-                input: "3 == 3",
-                output: true,
-            },
+        let tests: Vec<TestCase> = vec![
+            TestCase::bool("true", true),
+            TestCase::bool("false", false),
+            TestCase::bool("2 < 3", true),
+            TestCase::bool("2 < 1", false),
+            TestCase::bool("2 > 3", false),
+            TestCase::bool("2 > 1", true),
+            TestCase::bool("!true", false),
+            TestCase::bool("!false", true),
+            TestCase::bool("!!true", true),
+            TestCase::bool("!!false", false),
+            TestCase::bool("true == true", true),
+            TestCase::bool("3 == 3", true),
         ];
         for test in tests {
-            assert_eq!(Object::Boolean(test.output), *eval_program(test.input));
+            run_test_case(test);
         }
     }
 
-    struct TestEvalAnyCase {
-        input: &'static str,
-        output: Object,
-    }
     #[test]
     fn test_if_expression() {
-        let tests: Vec<TestEvalAnyCase> = vec![
-            TestEvalAnyCase {
-                input: "if (true) { 5 }",
-                output: Object::Integer(5),
-            },
-            TestEvalAnyCase {
-                input: "if (3 > 2) { 65 }",
-                output: Object::Integer(65),
-            },
-            TestEvalAnyCase {
-                input: "if (true) {}",
-                output: Object::Null,
-            },
-            TestEvalAnyCase {
-                input: "if (false) {}",
-                output: Object::Null,
-            },
-            TestEvalAnyCase {
-                input: "if (false) { 5 } else {}",
-                output: Object::Null,
-            },
-            TestEvalAnyCase {
-                input: "if (false) { 2 } else { 3 }",
-                output: Object::Integer(3),
-            },
-            TestEvalAnyCase {
-                input: "
+        let tests: Vec<TestCase> = vec![
+            TestCase::int("if (true) { 5 }", 5),
+            TestCase::int("if (3 > 2) { 65 }", 65),
+            TestCase::null("if (true) {}"),
+            TestCase::null("if (false) {}"),
+            TestCase::null("if (false) { 5 } else {}"),
+            TestCase::int("if (false) { 2 } else { 3 }", 3),
+            TestCase::int(
+                "
                 let a = 3;
                 if (true) { 
                     let a = 5;
                 }
                 a
                 ",
-                output: Object::Integer(3),
-            },
-            TestEvalAnyCase {
-                input: "
+                3,
+            ),
+            TestCase::int(
+                "
                 let a = 3;
                 if (false) {} else { 
                     let a = 5;
                 }
                 a
                 ",
-                output: Object::Integer(3),
-            },
+                3,
+            ),
         ];
         for test in tests {
-            assert_eq!(test.output, *eval_program(test.input));
+            run_test_case(test);
         }
-    }
-
-    fn eval_program(input: &'static str) -> Rc<Object> {
-        let mut lexer = lexer::new(input);
-        let mut parser = parser::Parser::new(&mut lexer);
-        let program = parser.parse_program().unwrap();
-        let env = Environment::new();
-        eval::eval_program(program, &Rc::new(RefCell::new(env)))
-            .unwrap()
-            .unwrap()
     }
 
     #[test]
     fn test_return_statement() {
-        let tests: Vec<TestEvalAnyCase> = vec![
-            TestEvalAnyCase {
-                input: "return 3;",
-                output: Object::Integer(3),
-            },
-            TestEvalAnyCase {
-                input: "return 10; 9;",
-                output: Object::Integer(10),
-            },
-            TestEvalAnyCase {
-                input: "return 2*5; 9;",
-                output: Object::Integer(10),
-            },
-            TestEvalAnyCase {
-                input: "9; return 2+5; 9;",
-                output: Object::Integer(7),
-            },
-            TestEvalAnyCase {
-                input: "
+        let tests: Vec<TestCase> = vec![
+            TestCase::int("return 3;", 3),
+            TestCase::int("return 10; 9;", 10),
+            TestCase::int("return 2*5; 9;", 10),
+            TestCase::int("9; return 2+5; 9;", 7),
+            TestCase::int(
+                "
                 if (10 > 1) {
                     if (10 > 1) {
                         return 10; 
@@ -202,11 +152,11 @@ mod test {
                     return 1;
                 }
                 ",
-                output: Object::Integer(10),
-            },
+                10,
+            ),
         ];
         for test in tests {
-            assert_eq!(test.output, *eval_program(test.input));
+            run_test_case(test);
         }
     }
 
@@ -255,7 +205,7 @@ mod test {
             let mut parser = parser::Parser::new(&mut lexer);
             let program = parser.parse_program().unwrap();
             let env = Environment::new();
-            let evaluation_result = eval::eval_program(program, &Rc::new(RefCell::new(env)))
+            let evaluation_result = eval::eval_program(&program, Rc::new(RefCell::new(env)))
                 .map_err(|e| errors::MonkeyError::Eval(e))
                 .unwrap_err();
             assert_eq!(
@@ -267,69 +217,32 @@ mod test {
 
     #[test]
     fn test_let_statements() {
-        let tests: Vec<TestEvalAnyCase> = vec![
-            TestEvalAnyCase {
-                input: "let a = 5; a;",
-                output: Object::Integer(5),
-            },
-            TestEvalAnyCase {
-                input: "let a = 5 * 5; a;",
-                output: Object::Integer(25),
-            },
-            TestEvalAnyCase {
-                input: "let a = 5; let b = a; b;",
-                output: Object::Integer(5),
-            },
-            TestEvalAnyCase {
-                input: "let a = 5; let b = a; let c = a + b + 5; c;",
-                output: Object::Integer(15),
-            },
+        let tests: Vec<TestCase> = vec![
+            TestCase::int("let a = 5; a;", 5),
+            TestCase::int("let a = 5 * 5; a;", 25),
+            TestCase::int("let a = 5; let b = a; b;", 5),
+            TestCase::int("let a = 5; let b = a; let c = a + b + 5; c;", 15),
         ];
         for test in tests {
-            let result = eval_program(test.input);
-            assert_eq!(*result, test.output);
+            run_test_case(test);
         }
     }
 
     #[test]
     fn test_fn_application() {
-        let tests: Vec<TestEvalAnyCase> = vec![
-            TestEvalAnyCase {
-                input: "let identity = fn(x) { x; }; identity(5);",
-                output: Object::Integer(5),
-            },
-            TestEvalAnyCase {
-                input: "let identity = fn(x) { return x; }; identity(5);",
-                output: Object::Integer(5),
-            },
-            TestEvalAnyCase {
-                input: "let double = fn(x) { x * 2; }; double(5);",
-                output: Object::Integer(10),
-            },
-            TestEvalAnyCase {
-                input: "let add = fn(x, y) { x + y; }; add(5, 5);",
-                output: Object::Integer(10),
-            },
-            TestEvalAnyCase {
-                input: "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));",
-                output: Object::Integer(20),
-            },
-            TestEvalAnyCase {
-                input: "fn(x) { x; }(5)",
-                output: Object::Integer(5),
-            },
+        let tests: Vec<TestCase> = vec![
+            TestCase::int("let identity = fn(x) { x; }; identity(5);", 5),
+            TestCase::int("let identity = fn(x) { return x; }; identity(5);", 5),
+            TestCase::int("let double = fn(x) { x * 2; }; double(5);", 10),
+            TestCase::int("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
+            TestCase::int("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
+            TestCase::int("fn(x) { x; }(5)", 5),
             // Check closure can capture its env
-            TestEvalAnyCase {
-                input: "let a = 3; let b = fn() { a; }; b();",
-                output: Object::Integer(3),
-            },
+            TestCase::int("let a = 3; let b = fn() { a; }; b();", 3),
             // Check closure doesn't overwrite parent env
-            TestEvalAnyCase {
-                input: "let a = 3; fn() { let a = 5; }(); a;",
-                output: Object::Integer(3),
-            },
-            TestEvalAnyCase {
-                input: "
+            TestCase::int("let a = 3; fn() { let a = 5; }(); a;", 3),
+            TestCase::int(
+                "
                 let times_by_five = fn() { 
                     let a = 5;
                     fn(x) {
@@ -338,70 +251,57 @@ mod test {
                 }();
                 times_by_five(3);
                 ", // this works even though the env the inner fn was defined in no longer exists!
-                output: Object::Integer(15),
-            },
-            TestEvalAnyCase {
-                input: "let multiply = fn(x) { fn(y) { x * y }; }; multiply(3)(5);",
-                output: Object::Integer(15),
-            },
+                15,
+            ),
+            TestCase::int(
+                "let multiply = fn(x) { fn(y) { x * y }; }; multiply(3)(5);",
+                15,
+            ),
         ];
         for test in tests {
-            let result = eval_program(test.input);
-            assert_eq!(*result, test.output);
+            run_test_case(test);
         }
     }
 
     #[test]
     fn test_string_literals() {
-        let tests: Vec<TestEvalAnyCase> = vec![
-            TestEvalAnyCase {
-                input: "\"ahoy shipmates\";",
-                output: Object::String(String::from("ahoy shipmates")),
-            },
-            TestEvalAnyCase {
-                input: r#""hello" + " " + "everyone!""#,
-                output: Object::String(String::from("hello everyone!")),
-            },
+        let tests: Vec<TestCase> = vec![
+            TestCase::string("\"ahoy shipmates\";", String::from("ahoy shipmates")),
+            TestCase::string(
+                r#""hello" + " " + "everyone!""#,
+                String::from("hello everyone!"),
+            ),
         ];
         for test in tests {
-            let result = eval_program(test.input);
-            assert_eq!(*result, test.output);
+            run_test_case(test);
         }
     }
 
     #[test]
     fn test_block_expressions() {
-        let tests: Vec<TestEvalAnyCase> = vec![
-            TestEvalAnyCase {
-                input: "let a = { 2; 3; }; a",
-                output: Object::Integer(3),
-            },
-            TestEvalAnyCase {
-                input: "
+        let tests: Vec<TestCase> = vec![
+            TestCase::int("let a = { 2; 3; }; a", 3),
+            TestCase::int(
+                "
             let a = 3;
             { 
                 let a = 5;
             }
             a
             ",
-                output: Object::Integer(3),
-            },
+                3,
+            ),
         ];
         for test in tests {
-            let result = eval_program(test.input);
-            assert_eq!(*result, test.output);
+            run_test_case(test);
         }
     }
 
     #[test]
     fn test_builtins() {
-        let tests: Vec<TestEvalAnyCase> = vec![TestEvalAnyCase {
-            input: "len(\"ahoy\")",
-            output: Object::Integer(4),
-        }];
+        let tests: Vec<TestCase> = vec![TestCase::int("len(\"ahoy\")", 4)];
         for test in tests {
-            let result = eval_program(test.input);
-            assert_eq!(*result, test.output);
+            run_test_case(test);
         }
     }
 }

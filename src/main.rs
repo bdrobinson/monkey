@@ -33,5 +33,5 @@ fn run_program(source_code: String) {
     let mut lexer = lexer::new(&source_code);
     let mut parser = parser::Parser::new(&mut lexer);
     let program = parser.parse_program().unwrap();
-    eval::eval_program(program, &env).unwrap();
+    eval::eval_program(&program, env).unwrap();
 }
