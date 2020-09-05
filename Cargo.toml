@@ -10,8 +10,8 @@ clap = "3.0.0-beta.1"
 appendlist = "1.4.0"
 
 [lib]
-name = "monkey_interpreter"           # The name of the target.
-path = "src/interpreter.rs"    # The source file of the target.
+name = "monkey"           # The name of the target.
+path = "src/lib.rs"    # The source file of the target.
 doc = true             # Is documented by default.
 
 [[bin]]

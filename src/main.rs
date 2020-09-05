@@ -2,7 +2,7 @@ mod repl;
 
 use clap::Clap;
 use core::cell::RefCell;
-use monkey_interpreter::{eval, lexer, object::environment, parser};
+use monkey::{eval, lexer, object::environment, parser};
 use std::fs;
 use std::io;
 use std::rc::Rc;

@@ -1,7 +1,7 @@
 use appendlist::AppendList;
 use core::cell::RefCell;
 use io::BufRead;
-use monkey_interpreter::{ast, errors, eval, lexer, object, parser};
+use monkey::{ast, errors, eval, lexer, object, parser};
 use object::environment;
 use std::io;
 use std::rc::Rc;
