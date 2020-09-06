@@ -1,9 +1,9 @@
 mod test;
 
-pub enum OpCodeAndOperands {
+pub enum Instruction {
     Constant(u16),
 }
-impl OpCodeAndOperands {
+impl Instruction {
     fn opcode_byte(&self) -> u8 {
         match self {
             Self::Constant(_) => 0,
