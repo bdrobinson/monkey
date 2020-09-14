@@ -10,20 +10,20 @@ pub trait BuiltinFunction: Debug {
 }
 
 #[derive(Debug)]
-pub enum Object<'a> {
+pub enum Object<'ast> {
     Integer(i64),
     Boolean(bool),
     String(String),
     Null,
-    ReturnValue(Rc<Object<'a>>),
+    ReturnValue(Rc<Object<'ast>>),
     Function {
         parameter_names: Vec<String>,
-        body: &'a ast::BlockStatement,
-        env: Rc<RefCell<environment::Environment<'a>>>,
+        body: &'ast ast::BlockStatement,
+        env: Rc<RefCell<environment::Environment<'ast>>>,
     },
     BuiltinFunction(Box<dyn BuiltinFunction>),
 }
-impl<'a> Object<'a> {
+impl<'ast> Object<'ast> {
     pub fn type_name(&self) -> String {
         let string = match self {
             Object::Integer(_) => "Integer",

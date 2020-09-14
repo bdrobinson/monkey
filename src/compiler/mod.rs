@@ -1,16 +1,17 @@
 use crate::{ast, code, object};
 use std::convert::TryInto;
+use std::rc::Rc;
 
 #[derive(Debug)]
-enum AstNode<'a> {
+pub enum AstNode<'a> {
     Program(&'a ast::Program),
     Statement(&'a ast::Statement),
     Expression(&'a ast::Expression),
 }
 
-struct Compiler<'a> {
+pub struct Compiler<'ast> {
     instructions: Vec<u8>,
-    constants: Vec<object::Object<'a>>,
+    constants: Vec<object::Object<'ast>>,
 }
 
 impl<'a> Compiler<'a> {
@@ -73,14 +74,20 @@ impl<'a> Compiler<'a> {
     fn bytecode(self) -> Bytecode<'a> {
         Bytecode {
             instructions: self.instructions,
-            constants: self.constants,
+            constants: self.constants.into_iter().map(|constant| Rc::new(constant)).collect(),
         }
     }
 }
 
-struct Bytecode<'a> {
-    instructions: Vec<u8>,
-    constants: Vec<object::Object<'a>>,
+pub fn compile_program<'ast, 'bytecode>(program: &'ast ast::Program) -> Bytecode<'bytecode> {
+    let mut compiler = Compiler::new();
+    compiler.compile(AstNode::Program(program));
+    compiler.bytecode()
+}
+
+pub struct Bytecode<'ast> {
+    pub instructions: Vec<u8>,
+    pub constants: Vec<Rc<object::Object<'ast>>>,
 }
 
 #[cfg(test)]
@@ -115,9 +122,7 @@ mod test {
 
     fn run_compiler_test(test: CompilerTestCase) {
         let program = parse(test.input);
-        let mut compiler = compiler::Compiler::new();
-        compiler.compile(compiler::AstNode::Program(&program));
-        let bytecode = compiler.bytecode();
+        let bytecode = compiler::compile_program(&program);
         let expected_instructions_bytecode = test
             .expected_instructions
             .into_iter()
