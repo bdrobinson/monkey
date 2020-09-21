@@ -74,7 +74,11 @@ impl<'a> Compiler<'a> {
     fn bytecode(self) -> Bytecode<'a> {
         Bytecode {
             instructions: self.instructions,
-            constants: self.constants.into_iter().map(|constant| Rc::new(constant)).collect(),
+            constants: self
+                .constants
+                .into_iter()
+                .map(|constant| Rc::new(constant))
+                .collect(),
         }
     }
 }

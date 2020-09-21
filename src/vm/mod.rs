@@ -1,4 +1,4 @@
-use crate::{compiler, object, code};
+use crate::{code, compiler, object};
 use std::rc::Rc;
 
 const STACK_SIZE: usize = 2048;
@@ -12,14 +12,19 @@ impl<'a> Stack<'a> {
         self.elements.last().map(|l| Rc::clone(l))
     }
     fn new() -> Self {
-        Stack { elements: Vec::with_capacity(STACK_SIZE) }
+        Stack {
+            elements: Vec::with_capacity(STACK_SIZE),
+        }
     }
     fn push(&mut self, obj: Rc<object::Object<'a>>) {
         self.elements.push(obj);
     }
 }
 
-pub struct Vm<'ast, 'bytecode> where 'ast: 'bytecode {
+pub struct Vm<'ast, 'bytecode>
+where
+    'ast: 'bytecode,
+{
     bytecode: &'bytecode compiler::Bytecode<'ast>,
     stack: Stack<'ast>,
 }
@@ -40,13 +45,14 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
             if let Some(instruction) = instruction {
                 match instruction {
                     code::Instruction::Constant(constant_index) => {
-                        self.stack.push(Rc::clone(&self.bytecode.constants[constant_index as usize]));
+                        self.stack
+                            .push(Rc::clone(&self.bytecode.constants[constant_index as usize]));
                     }
                 }
             } else {
                 should_continue = false;
             }
-        };
+        }
     }
 
     pub fn stack_top(&self) -> Option<Rc<object::Object<'ast>>> {
@@ -76,9 +82,10 @@ mod test {
 
     #[test]
     fn vm_tests() {
-        let tests = vec![
-            VmTestCase { input: "3 + 4", expected: object::Object::Integer(4)}
-        ];
+        let tests = vec![VmTestCase {
+            input: "3 + 4",
+            expected: object::Object::Integer(4),
+        }];
         for test in tests {
             run_vm_test(test);
         }

@@ -31,9 +31,7 @@ impl Instruction {
                 let constant = u16::from_be_bytes([first, second]);
                 Some(Self::Constant(constant))
             }
-            _ => {
-                panic!("Unknown op byte")
-            }
+            _ => panic!("Unknown op byte"),
         }
     }
 }
