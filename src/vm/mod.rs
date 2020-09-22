@@ -1,4 +1,4 @@
-use crate::{code, compiler, object};
+use crate::{code, compiler, logic, object};
 use std::rc::Rc;
 
 const STACK_SIZE: usize = 2048;
@@ -19,6 +19,9 @@ impl<'a> Stack<'a> {
     fn push(&mut self, obj: Rc<object::Object<'a>>) {
         self.elements.push(obj);
     }
+    fn pop(&mut self) -> Option<Rc<object::Object<'a>>> {
+        self.elements.pop()
+    }
 }
 
 pub struct Vm<'ast, 'bytecode>
@@ -37,7 +40,7 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
         }
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<(), String> {
         let mut instructions_iter = self.bytecode.instructions.iter();
         let mut should_continue = true;
         while should_continue {
@@ -48,11 +51,18 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
                         self.stack
                             .push(Rc::clone(&self.bytecode.constants[constant_index as usize]));
                     }
+                    code::Instruction::Add => {
+                        let right = self.stack.pop().unwrap();
+                        let left = self.stack.pop().unwrap();
+                        let result = logic::eval_infix(left, &logic::InfixOperator::Plus, right)?;
+                        self.stack.push(Rc::new(result));
+                    }
                 }
             } else {
                 should_continue = false;
             }
         }
+        Ok(())
     }
 
     pub fn stack_top(&self) -> Option<Rc<object::Object<'ast>>> {
@@ -74,7 +84,7 @@ mod test {
         let program = parser.parse_program().unwrap();
         let bytecode = compiler::compile_program(&program);
         let mut vm = vm::Vm::new(&bytecode);
-        vm.run();
+        vm.run().unwrap();
         let top = vm.stack_top();
         assert_eq!(top.as_deref(), Some(&case.expected));
     }
@@ -83,7 +93,7 @@ mod test {
     fn vm_tests() {
         let tests = vec![VmTestCase {
             input: "3 + 4",
-            expected: object::Object::Integer(4),
+            expected: object::Object::Integer(7),
         }];
         for test in tests {
             run_vm_test(test);

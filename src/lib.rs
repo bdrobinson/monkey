@@ -4,6 +4,7 @@ pub mod compiler;
 pub mod errors;
 pub mod eval;
 pub mod lexer;
+pub mod logic;
 pub mod object;
 pub mod parser;
 pub mod token;

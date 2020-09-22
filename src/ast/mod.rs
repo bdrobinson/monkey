@@ -1,3 +1,4 @@
+use crate::logic;
 use core::fmt::Display;
 use std::fmt;
 
@@ -155,30 +156,4 @@ impl fmt::Display for PrefixOperator {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum InfixOperator {
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-    Gt,
-    Lt,
-    Eq,
-    NotEq,
-}
-
-impl fmt::Display for InfixOperator {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let string = match self {
-            InfixOperator::Plus => "+",
-            InfixOperator::Minus => "-",
-            InfixOperator::Multiply => "*",
-            InfixOperator::Divide => "/",
-            InfixOperator::Gt => ">",
-            InfixOperator::Lt => "<",
-            InfixOperator::Eq => "==",
-            InfixOperator::NotEq => "!=",
-        };
-        write!(f, "{}", string)
-    }
-}
+pub use logic::InfixOperator;

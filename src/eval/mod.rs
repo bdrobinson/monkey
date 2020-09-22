@@ -30,7 +30,7 @@ pub fn eval_expression<'a>(
         } => {
             let left = eval_expression(left, Rc::clone(&env))?;
             let right = eval_expression(right, Rc::clone(&env))?;
-            eval_infix(left, operator, right).map(Rc::new)
+            crate::logic::eval_infix(left, operator, right).map(Rc::new)
         }
         ast::Expression::Boolean { value } => Ok(Rc::new(Object::Boolean(*value))),
         ast::Expression::Prefix { operator, right } => {
@@ -199,42 +199,6 @@ where
         }
     });
     Ok(evaluated)
-}
-
-fn eval_infix<'a>(
-    left: Rc<Object<'a>>,
-    op: &ast::InfixOperator,
-    right: Rc<Object<'a>>,
-) -> Result<Object<'a>, String> {
-    match (&*left, &op, &*right) {
-        (_, ast::InfixOperator::Eq, _) => Ok(Object::Boolean(left == right)),
-        (_, ast::InfixOperator::NotEq, _) => Ok(Object::Boolean(left != right)),
-        (Object::Integer(left), ast::InfixOperator::Plus, Object::Integer(right)) => {
-            Ok(Object::Integer(left + right))
-        }
-        (Object::Integer(left), ast::InfixOperator::Minus, Object::Integer(right)) => {
-            Ok(Object::Integer(left - right))
-        }
-        (Object::Integer(left), ast::InfixOperator::Multiply, Object::Integer(right)) => {
-            Ok(Object::Integer(left * right))
-        }
-        (Object::Integer(left), ast::InfixOperator::Divide, Object::Integer(right)) => {
-            Ok(Object::Integer(left / right))
-        }
-        (Object::Integer(left), ast::InfixOperator::Gt, Object::Integer(right)) => {
-            Ok(Object::Boolean(left > right))
-        }
-        (Object::Integer(left), ast::InfixOperator::Lt, Object::Integer(right)) => {
-            Ok(Object::Boolean(left < right))
-        }
-        (Object::String(left), ast::InfixOperator::Plus, Object::String(right)) => {
-            Ok(Object::String(format!("{}{}", left, right)))
-        }
-        (left, op, right) => Err(format!(
-            "Cannot evaluate infix expression {} {} {}",
-            left, op, right
-        )),
-    }
 }
 
 fn read_from_env<'a>(env: &Environment<'a>, identifier: &str) -> Result<Rc<Object<'a>>, String> {

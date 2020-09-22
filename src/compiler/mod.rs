@@ -39,9 +39,18 @@ impl<'a> Compiler<'a> {
                 ast::Expression::Prefix { right, .. } => {
                     self.compile(AstNode::Expression(&right));
                 }
-                ast::Expression::Infix { left, right, .. } => {
+                ast::Expression::Infix {
+                    left,
+                    right,
+                    operator,
+                } => {
                     self.compile(AstNode::Expression(&left));
                     self.compile(AstNode::Expression(&right));
+                    let mut opcode_bytes: Vec<u8> = match operator {
+                        ast::InfixOperator::Plus => code::Instruction::Add.to_bytes(),
+                        _ => unimplemented!(),
+                    };
+                    Vec::append(&mut self.instructions, &mut opcode_bytes);
                 }
                 ast::Expression::Block { statements } => {
                     for statement in statements {
@@ -106,6 +115,7 @@ mod test {
             expected_instructions: vec![
                 code::Instruction::Constant(0).to_bytes(),
                 code::Instruction::Constant(1).to_bytes(),
+                code::Instruction::Add.to_bytes(),
             ],
             expected_constants: vec![object::Object::Integer(1), object::Object::Integer(2)],
         }];
