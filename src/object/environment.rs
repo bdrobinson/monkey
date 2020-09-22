@@ -9,12 +9,18 @@ pub struct Environment<'a> {
     outer: Option<Rc<RefCell<Environment<'a>>>>,
 }
 
-impl<'a> Environment<'a> {
-    pub fn new() -> Environment<'a> {
+impl<'a> Default for Environment<'a> {
+    fn default() -> Self {
         Environment {
             map: HashMap::<String, Rc<Object>>::new(),
             outer: None,
         }
+    }
+}
+
+impl<'a> Environment<'a> {
+    pub fn new() -> Environment<'a> {
+        Environment::default()
     }
 
     pub fn new_enclosed(outer: Rc<RefCell<Environment>>) -> Environment {

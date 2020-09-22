@@ -1,7 +1,7 @@
 use std::fmt;
 
-pub fn token_from_word(literal: &String) -> Option<Token> {
-    match literal.as_str() {
+pub fn token_from_word(literal: &str) -> Option<Token> {
+    match literal {
         "fn" => Some(Token::Function),
         "let" => Some(Token::Let),
         "if" => Some(Token::If),

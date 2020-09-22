@@ -13,9 +13,9 @@ pub fn start(
     output: &mut dyn io::Write,
     error: &mut dyn io::Write,
 ) -> Result<(), io::Error> {
-    output.write("Welcome to the Monkey REPL!\n".as_bytes())?;
-    output.write("Type some code!\n".as_bytes())?;
-    output.write(PROMPT.as_bytes())?;
+    output.write_all(b"Welcome to the Monkey REPL!\n")?;
+    output.write_all(b"Type some code!\n")?;
+    output.write_all(PROMPT.as_bytes())?;
     output.flush()?;
 
     // The objects will hold references to the ast nodes so each line of
@@ -32,16 +32,16 @@ pub fn start(
         match eval_line(program, Rc::clone(&env)) {
             Ok(evaluated) => {
                 if let Some(obj) = evaluated {
-                    output.write(format!("{}\n", obj).as_bytes())?;
+                    output.write_all(format!("{}\n", obj).as_bytes())?;
                 } else {
-                    output.write("\n".as_bytes())?;
+                    output.write_all(b"\n")?;
                 }
             }
             Err(message) => {
-                error.write(format!("{}\n", message).as_bytes())?;
+                error.write_all(format!("{}\n", message).as_bytes())?;
             }
         }
-        output.write(PROMPT.as_bytes())?;
+        output.write_all(PROMPT.as_bytes())?;
         output.flush()?;
     }
     Ok(())
@@ -53,7 +53,7 @@ fn eval_line<'a>(
 ) -> Result<Option<Rc<object::Object<'a>>>, errors::MonkeyError>
 where
 {
-    let object = eval::eval_program(&program, env).map_err(|e| errors::MonkeyError::Eval(e))?;
+    let object = eval::eval_program(&program, env).map_err(errors::MonkeyError::Eval)?;
     Ok(object)
 }
 
@@ -63,6 +63,6 @@ fn parse_line(line: &str) -> Result<ast::Program, errors::MonkeyError> {
     let mut parser = parser::Parser::new(&mut lexer);
     let program = parser
         .parse_program()
-        .map_err(|e| errors::MonkeyError::Parser(e))?;
+        .map_err(errors::MonkeyError::Parser)?;
     Ok(program)
 }

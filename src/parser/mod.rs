@@ -1,3 +1,4 @@
+#[cfg(test)]
 mod test;
 
 use crate::{
@@ -47,7 +48,7 @@ impl Parser<'_> {
         let first_token = lexer.next_token();
         let second_token = lexer.next_token();
         Parser {
-            lexer: lexer,
+            lexer,
             cur_token: first_token,
             peek_token: second_token,
         }
@@ -171,10 +172,7 @@ impl Parser<'_> {
 
         let body = self.parse_block_statement()?;
 
-        Ok(ast::Expression::FnLiteral {
-            param_names: param_names,
-            body: body,
-        })
+        Ok(ast::Expression::FnLiteral { param_names, body })
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<ast::Expression> {
@@ -215,7 +213,7 @@ impl Parser<'_> {
                     ParsedInfix::Infix { operator, right } => {
                         left_exp = ast::Expression::Infix {
                             left: Box::new(left_exp),
-                            operator: operator,
+                            operator,
                             right: Box::new(right),
                         }
                     }
@@ -258,8 +256,8 @@ impl Parser<'_> {
         };
         Ok(ast::Expression::If {
             condition: Box::new(condition),
-            consequence: consequence,
-            alternative: alternative,
+            consequence,
+            alternative,
         })
     }
 
@@ -274,9 +272,7 @@ impl Parser<'_> {
             statements.push(statement);
             self.next_token();
         }
-        Ok(ast::BlockStatement {
-            statements: statements,
-        })
+        Ok(ast::BlockStatement { statements })
     }
 
     fn parse_expression_statement(&mut self) -> ParserResult<ast::Statement> {
@@ -286,9 +282,7 @@ impl Parser<'_> {
         if let Token::Semicolon = self.peek_token {
             self.next_token();
         }
-        Ok(ast::Statement::Expression {
-            expression: expression,
-        })
+        Ok(ast::Statement::Expression { expression })
     }
 
     fn parse_prefix_expression(&mut self) -> ParserResult<ast::Expression> {
@@ -300,7 +294,7 @@ impl Parser<'_> {
         self.next_token();
         let right = self.parse_expression(Precedence::PREFIX)?;
         Ok(ast::Expression::Prefix {
-            operator: operator,
+            operator,
             right: Box::new(right),
         })
     }
@@ -327,7 +321,7 @@ impl Parser<'_> {
             // it's a call expression!
             Some(
                 self.parse_call_args()
-                    .map(|args| ParsedInfix::Call { args: args }),
+                    .map(|args| ParsedInfix::Call { args }),
             )
         } else {
             let operator = match self.cur_token {
@@ -344,10 +338,7 @@ impl Parser<'_> {
             self.next_token();
             Some(
                 self.parse_expression(precedence)
-                    .map(|right| ParsedInfix::Infix {
-                        operator: operator,
-                        right: right,
-                    }),
+                    .map(|right| ParsedInfix::Infix { operator, right }),
             )
         }
     }

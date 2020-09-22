@@ -58,7 +58,7 @@ impl fmt::Display for Object<'_> {
             Object::Boolean(value) => value.to_string(),
             Object::Null => String::from("null"),
             Object::String(value) => value.clone(),
-            Object::ReturnValue(obj) => String::from(format!("Return value: {}", obj)),
+            Object::ReturnValue(obj) => format!("Return value: {}", obj),
             Object::Function { .. } => String::from("Function"),
             Object::BuiltinFunction(..) => String::from("Builtin Function"),
         };

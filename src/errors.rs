@@ -27,9 +27,7 @@ impl Display for MonkeyError {
                 Ok(())
             }
             MonkeyError::Eval(eval_err) => {
-                let message = match eval_err {
-                    EvalError::Misc(message) => message,
-                };
+                let EvalError::Misc(message) = eval_err;
                 write!(f, "Eval error: {}", message)?;
                 Ok(())
             }

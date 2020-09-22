@@ -89,7 +89,7 @@ impl fmt::Display for Expression {
                 alternative
                     .as_ref()
                     .map(|a| format!("else {}", a))
-                    .unwrap_or(String::from(""))
+                    .unwrap_or_else(|| String::from(""))
             ),
             Expression::FnLiteral { param_names, body } => {
                 format!("fn({}) {}", param_names.join(", "), body)

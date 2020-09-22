@@ -4,6 +4,7 @@ use core::cell::RefCell;
 use std::rc::Rc;
 
 mod builtins;
+#[cfg(test)]
 mod test;
 
 use builtins::get_builtin_fn;
@@ -21,7 +22,7 @@ pub fn eval_expression<'a>(
     env: Rc<RefCell<Environment<'a>>>,
 ) -> Result<Rc<Object<'a>>, String> {
     match expression {
-        ast::Expression::IntegerLiteral { value } => Ok(Rc::new(Object::Integer(value.clone()))),
+        ast::Expression::IntegerLiteral { value } => Ok(Rc::new(Object::Integer(*value))),
         ast::Expression::Infix {
             left,
             operator,
@@ -29,9 +30,9 @@ pub fn eval_expression<'a>(
         } => {
             let left = eval_expression(left, Rc::clone(&env))?;
             let right = eval_expression(right, Rc::clone(&env))?;
-            eval_infix(left, operator, right).map(|exp| Rc::new(exp))
+            eval_infix(left, operator, right).map(Rc::new)
         }
-        ast::Expression::Boolean { value } => Ok(Rc::new(Object::Boolean(value.clone()))),
+        ast::Expression::Boolean { value } => Ok(Rc::new(Object::Boolean(*value))),
         ast::Expression::Prefix { operator, right } => {
             let object = eval_expression(right, env)?;
             match (&operator, &*object) {
@@ -70,14 +71,14 @@ pub fn eval_expression<'a>(
             };
             let evaluated_block =
                 eval_statements_with_inner_env(&block_to_eval.statements, Rc::clone(&env))?;
-            Ok(evaluated_block.unwrap_or(Rc::new(Object::Null)))
+            Ok(evaluated_block.unwrap_or_else(|| Rc::new(Object::Null)))
         }
         ast::Expression::Identifier { value } => {
             let obj = read_from_env(&env.borrow(), &value)?;
             Ok(obj)
         }
         ast::Expression::FnLiteral { param_names, body } => Ok(Rc::new(Object::Function {
-            body: body,
+            body,
             parameter_names: param_names.clone(),
             env: Rc::clone(&env),
         })),
@@ -89,19 +90,14 @@ pub fn eval_expression<'a>(
                     parameter_names,
                     body,
                     env,
-                } => call_function(
-                    evaluated_arguments,
-                    &parameter_names,
-                    body.clone(),
-                    Rc::clone(env),
-                ),
+                } => call_function(evaluated_arguments, &parameter_names, body, Rc::clone(env)),
                 Object::BuiltinFunction(builtin) => builtin.run(&evaluated_arguments),
                 _ => Err(format!("Cannot call {}", left_evaluated)),
             }
         }
         ast::Expression::StringLiteral { value } => Ok(Rc::new(Object::String(value.clone()))),
         ast::Expression::Block { statements } => eval_statements_with_inner_env(statements, env)
-            .map(|opt| opt.unwrap_or(Rc::new(Object::Null))),
+            .map(|opt| opt.unwrap_or_else(|| Rc::new(Object::Null))),
     }
 }
 
@@ -120,7 +116,7 @@ fn eval_expressions<'a>(
 
 fn call_function<'a>(
     args: Vec<Rc<Object<'a>>>,
-    expected_param_names: &Vec<String>,
+    expected_param_names: &[String],
     body: &'a ast::BlockStatement,
     parent_env: Rc<RefCell<Environment<'a>>>,
 ) -> Result<Rc<Object<'a>>, String> {
@@ -137,7 +133,7 @@ fn call_function<'a>(
         call_env.set(name, Rc::clone(&obj));
     }
     let result = eval_statements(&body.statements, Rc::new(RefCell::new(call_env)))?;
-    Ok(result.unwrap_or(Rc::new(Object::Null)))
+    Ok(result.unwrap_or_else(|| Rc::new(Object::Null)))
 }
 
 fn eval_statements<'a>(
@@ -194,7 +190,7 @@ pub fn eval_program<'prog, 'env>(
 where
     'prog: 'env,
 {
-    let evaluated = eval_statements(&program.statements, env).map_err(|e| EvalError::Misc(e))?;
+    let evaluated = eval_statements(&program.statements, env).map_err(EvalError::Misc)?;
     let evaluated: Option<Rc<Object>> = evaluated.map(|o| {
         if let Object::ReturnValue(value) = &*o {
             Rc::clone(value)
@@ -243,9 +239,6 @@ fn eval_infix<'a>(
 
 fn read_from_env<'a>(env: &Environment<'a>, identifier: &str) -> Result<Rc<Object<'a>>, String> {
     env.get(identifier)
-        .or(get_builtin_fn(identifier).map(|f| Rc::new(Object::BuiltinFunction(f))))
-        .ok_or(String::from(format!(
-            "The identifier '{}' has not been bound",
-            identifier
-        )))
+        .or_else(|| get_builtin_fn(identifier).map(|f| Rc::new(Object::BuiltinFunction(f))))
+        .ok_or_else(|| format!("The identifier '{}' has not been bound", identifier))
 }

@@ -32,7 +32,7 @@ where
 impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
     pub fn new(bytecode: &'bytecode compiler::Bytecode<'ast>) -> Vm<'ast, 'bytecode> {
         Vm {
-            bytecode: bytecode,
+            bytecode,
             stack: Stack::new(),
         }
     }
@@ -76,8 +76,7 @@ mod test {
         let mut vm = vm::Vm::new(&bytecode);
         vm.run();
         let top = vm.stack_top();
-        let obj_opt: Option<&object::Object> = top.as_ref().map(|a| &**a);
-        assert_eq!(obj_opt, Some(&case.expected));
+        assert_eq!(top.as_deref(), Some(&case.expected));
     }
 
     #[test]

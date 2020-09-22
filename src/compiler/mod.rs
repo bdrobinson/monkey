@@ -74,11 +74,7 @@ impl<'a> Compiler<'a> {
     fn bytecode(self) -> Bytecode<'a> {
         Bytecode {
             instructions: self.instructions,
-            constants: self
-                .constants
-                .into_iter()
-                .map(|constant| Rc::new(constant))
-                .collect(),
+            constants: self.constants.into_iter().map(Rc::new).collect(),
         }
     }
 }
@@ -130,7 +126,7 @@ mod test {
         let expected_instructions_bytecode = test
             .expected_instructions
             .into_iter()
-            .flat_map(|i| i)
+            .flatten()
             .collect::<Vec<u8>>();
         assert_eq!(expected_instructions_bytecode, bytecode.instructions);
         assert_eq!(
