@@ -25,10 +25,10 @@ impl<'a> Compiler<'a> {
         let next_const_index = self.constants.len();
         let next_const_index: u16 = next_const_index.try_into().unwrap();
         self.constants.push(obj);
-        Vec::append(
-            &mut self.instructions,
-            &mut code::Instruction::Constant(next_const_index).to_bytes(),
-        );
+        self.push_instruction(code::Instruction::Constant(next_const_index))
+    }
+    fn push_instruction(&mut self, instruction: code::Instruction) {
+        Vec::append(&mut self.instructions, &mut instruction.to_bytes());
     }
     fn compile(&mut self, node: AstNode) {
         match node {
@@ -46,11 +46,11 @@ impl<'a> Compiler<'a> {
                 } => {
                     self.compile(AstNode::Expression(&left));
                     self.compile(AstNode::Expression(&right));
-                    let mut opcode_bytes: Vec<u8> = match operator {
-                        ast::InfixOperator::Plus => code::Instruction::Add.to_bytes(),
+                    let instruction: code::Instruction = match operator {
+                        ast::InfixOperator::Plus => code::Instruction::Add,
                         _ => unimplemented!(),
                     };
-                    Vec::append(&mut self.instructions, &mut opcode_bytes);
+                    self.push_instruction(instruction);
                 }
                 ast::Expression::Block { statements } => {
                     for statement in statements {
@@ -73,7 +73,8 @@ impl<'a> Compiler<'a> {
                         //
                     }
                     ast::Statement::Expression { expression } => {
-                        self.compile(AstNode::Expression(expression))
+                        self.compile(AstNode::Expression(expression));
+                        self.push_instruction(code::Instruction::Pop);
                     }
                 }
             }
@@ -116,6 +117,7 @@ mod test {
                 code::Instruction::Constant(0).to_bytes(),
                 code::Instruction::Constant(1).to_bytes(),
                 code::Instruction::Add.to_bytes(),
+                code::Instruction::Pop.to_bytes(),
             ],
             expected_constants: vec![object::Object::Integer(1), object::Object::Integer(2)],
         }];

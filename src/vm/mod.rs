@@ -5,22 +5,23 @@ const STACK_SIZE: usize = 2048;
 
 struct Stack<'a> {
     elements: Vec<Rc<object::Object<'a>>>,
+    last_popped: Option<Rc<object::Object<'a>>>,
 }
 
 impl<'a> Stack<'a> {
-    fn top(&self) -> Option<Rc<object::Object<'a>>> {
-        self.elements.last().map(|l| Rc::clone(l))
-    }
     fn new() -> Self {
         Stack {
             elements: Vec::with_capacity(STACK_SIZE),
+            last_popped: None,
         }
     }
     fn push(&mut self, obj: Rc<object::Object<'a>>) {
         self.elements.push(obj);
     }
     fn pop(&mut self) -> Option<Rc<object::Object<'a>>> {
-        self.elements.pop()
+        let el = self.elements.pop();
+        self.last_popped = el.clone();
+        el
     }
 }
 
@@ -57,6 +58,9 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
                         let result = logic::eval_infix(left, &logic::InfixOperator::Plus, right)?;
                         self.stack.push(Rc::new(result));
                     }
+                    code::Instruction::Pop => {
+                        self.stack.pop();
+                    }
                 }
             } else {
                 should_continue = false;
@@ -65,8 +69,9 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
         Ok(())
     }
 
-    pub fn stack_top(&self) -> Option<Rc<object::Object<'ast>>> {
-        self.stack.top()
+    #[cfg(test)]
+    pub fn last_popped(&self) -> Option<Rc<object::Object<'ast>>> {
+        self.stack.last_popped.clone()
     }
 }
 
@@ -85,8 +90,8 @@ mod test {
         let bytecode = compiler::compile_program(&program);
         let mut vm = vm::Vm::new(&bytecode);
         vm.run().unwrap();
-        let top = vm.stack_top();
-        assert_eq!(top.as_deref(), Some(&case.expected));
+        let last_popped = vm.last_popped();
+        assert_eq!(last_popped.as_deref(), Some(&case.expected));
     }
 
     #[test]

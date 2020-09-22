@@ -3,18 +3,21 @@ mod test;
 pub enum Instruction {
     Constant(u16),
     Add,
+    Pop,
 }
 impl Instruction {
     fn opcode_byte(&self) -> u8 {
         match self {
             Self::Constant(_) => 0,
             Self::Add => 1,
+            Self::Pop => 2,
         }
     }
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut operand_bytes = match self {
             Self::Constant(constant) => constant.to_be_bytes().to_vec(),
             Self::Add => vec![],
+            Self::Pop => vec![],
         };
         let mut result = vec![self.opcode_byte()];
         Vec::append(&mut result, &mut operand_bytes);
@@ -36,6 +39,7 @@ impl Instruction {
                 Some(Self::Constant(constant))
             }
             1 => Some(Self::Add),
+            2 => Some(Self::Pop),
             _ => panic!("Unknown op byte"),
         }
     }
