@@ -1,7 +1,8 @@
 use appendlist::AppendList;
 use core::cell::RefCell;
 use io::BufRead;
-use monkey::{ast, errors, eval, lexer, object, parser};
+use monkey::errors::MonkeyError;
+use monkey::{ast, compiler, errors, eval, lexer, object, parser, vm};
 use object::environment;
 use std::io;
 use std::rc::Rc;
@@ -12,6 +13,7 @@ pub fn start(
     input: &mut dyn io::BufRead,
     output: &mut dyn io::Write,
     error: &mut dyn io::Write,
+    use_interpreter: bool,
 ) -> Result<(), io::Error> {
     output.write_all(b"Welcome to the Monkey REPL!\n")?;
     output.write_all(b"Type some code!\n")?;
@@ -27,7 +29,7 @@ pub fn start(
     let env = Rc::new(RefCell::new(environment::Environment::new()));
     for line_result in input.lines() {
         let line = line_result?;
-        match eval_line(&line, &program_bank, Rc::clone(&env)) {
+        match eval_line(&line, &program_bank, Rc::clone(&env), use_interpreter) {
             Ok(evaluated) => {
                 if let Some(obj) = evaluated {
                     output.write_all(format!("{}\n", obj).as_bytes())?;
@@ -49,11 +51,18 @@ fn eval_line<'a>(
     line: &str,
     program_bank: &'a AppendList<ast::Program>,
     env: Rc<RefCell<environment::Environment<'a>>>,
+    use_interpreter: bool,
 ) -> Result<Option<Rc<object::Object<'a>>>, errors::MonkeyError> {
     let program = parse_line(line)?;
     program_bank.push(program);
     let program = program_bank.iter().last().unwrap(); // there will always be an item in here as we just put one in.
-    let object = eval::eval_program(&program, env).map_err(errors::MonkeyError::Eval)?;
+    let object = if use_interpreter {
+        eval::eval_program(&program, env).map_err(errors::MonkeyError::Eval)?
+    } else {
+        let bytecode = compiler::compile_program(program);
+        let mut vm = vm::Vm::new(&bytecode);
+        vm.run().map_err(|msg| MonkeyError::VmError(msg))?
+    };
     Ok(object)
 }
 

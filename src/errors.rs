@@ -6,6 +6,7 @@ use core::fmt::Display;
 pub enum MonkeyError {
     Parser(ParserError),
     Eval(EvalError),
+    VmError(String),
 }
 
 impl Display for MonkeyError {
@@ -29,6 +30,10 @@ impl Display for MonkeyError {
             MonkeyError::Eval(eval_err) => {
                 let EvalError::Misc(message) = eval_err;
                 write!(f, "Eval error: {}", message)?;
+                Ok(())
+            }
+            MonkeyError::VmError(msg) => {
+                write!(f, "VM Error: {}", msg)?;
                 Ok(())
             }
         }
