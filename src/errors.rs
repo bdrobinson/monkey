@@ -1,12 +1,13 @@
 use crate::eval::EvalError;
 use crate::parser::ParserError;
+use crate::vm::VmError;
 use core::fmt::Display;
 
 #[derive(Debug)]
 pub enum MonkeyError {
     Parser(ParserError),
     Eval(EvalError),
-    VmError(String),
+    VmError(VmError),
 }
 
 impl Display for MonkeyError {
@@ -32,8 +33,12 @@ impl Display for MonkeyError {
                 write!(f, "Eval error: {}", message)?;
                 Ok(())
             }
-            MonkeyError::VmError(msg) => {
-                write!(f, "VM Error: {}", msg)?;
+            MonkeyError::VmError(err) => {
+                let message = match err {
+                    VmError::PopEmptyStack => "Cannot pop from an empty stack",
+                    VmError::Misc(msg) => msg,
+                };
+                write!(f, "VM Error: {}", message)?;
                 Ok(())
             }
         }

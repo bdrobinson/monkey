@@ -22,6 +22,12 @@ impl<'a> Stack<'a> {
     }
 }
 
+#[derive(Debug)]
+pub enum VmError {
+    PopEmptyStack,
+    Misc(String),
+}
+
 pub struct Vm<'ast, 'bytecode>
 where
     'ast: 'bytecode,
@@ -38,7 +44,7 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
         }
     }
 
-    pub fn run(&mut self) -> Result<Option<Rc<object::Object<'ast>>>, String> {
+    pub fn run(&mut self) -> Result<Option<Rc<object::Object<'ast>>>, VmError> {
         let mut instructions_iter = self.bytecode.instructions.iter();
         let mut should_continue = true;
         let mut last_popped: Option<Rc<object::Object>> = None;
@@ -66,10 +72,10 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
         }
         Ok(last_popped)
     }
-    fn handle_infix(&mut self, operator: &logic::InfixOperator) -> Result<(), String> {
-        let right = self.stack.pop().unwrap();
-        let left = self.stack.pop().unwrap();
-        let result = logic::eval_infix(left, operator, right)?;
+    fn handle_infix(&mut self, operator: &logic::InfixOperator) -> Result<(), VmError> {
+        let right = self.stack.pop().ok_or(VmError::PopEmptyStack)?;
+        let left = self.stack.pop().ok_or(VmError::PopEmptyStack)?;
+        let result = logic::eval_infix(left, operator, right).map_err(VmError::Misc)?;
         self.stack.push(Rc::new(result));
         Ok(())
     }
