@@ -26,10 +26,8 @@ pub fn start(
     let program_bank = AppendList::<ast::Program>::new();
     let env = Rc::new(RefCell::new(environment::Environment::new()));
     for line_result in input.lines() {
-        let line = line_result.unwrap();
-        program_bank.push(parse_line(&line).unwrap());
-        let program = program_bank.iter().last().unwrap();
-        match eval_line(program, Rc::clone(&env)) {
+        let line = line_result?;
+        match eval_line(&line, &program_bank, Rc::clone(&env)) {
             Ok(evaluated) => {
                 if let Some(obj) = evaluated {
                     output.write_all(format!("{}\n", obj).as_bytes())?;
@@ -48,11 +46,13 @@ pub fn start(
 }
 
 fn eval_line<'a>(
-    program: &'a ast::Program,
+    line: &str,
+    program_bank: &'a AppendList<ast::Program>,
     env: Rc<RefCell<environment::Environment<'a>>>,
-) -> Result<Option<Rc<object::Object<'a>>>, errors::MonkeyError>
-where
-{
+) -> Result<Option<Rc<object::Object<'a>>>, errors::MonkeyError> {
+    let program = parse_line(line)?;
+    program_bank.push(program);
+    let program = program_bank.iter().last().unwrap(); // there will always be an item in here as we just put one in.
     let object = eval::eval_program(&program, env).map_err(errors::MonkeyError::Eval)?;
     Ok(object)
 }
