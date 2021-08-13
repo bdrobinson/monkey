@@ -48,6 +48,7 @@ impl<'a> Compiler<'a> {
                     self.compile(AstNode::Expression(&right));
                     let instruction: code::Instruction = match operator {
                         ast::InfixOperator::Plus => code::Instruction::Add,
+                        ast::InfixOperator::Minus => code::Instruction::Sub,
                         _ => unimplemented!(),
                     };
                     self.push_instruction(instruction);

@@ -51,10 +51,10 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
                             .push(Rc::clone(&self.bytecode.constants[constant_index as usize]));
                     }
                     code::Instruction::Add => {
-                        let right = self.stack.pop().unwrap();
-                        let left = self.stack.pop().unwrap();
-                        let result = logic::eval_infix(left, &logic::InfixOperator::Plus, right)?;
-                        self.stack.push(Rc::new(result));
+                        self.handle_infix(&logic::InfixOperator::Plus)?;
+                    }
+                    code::Instruction::Sub => {
+                        self.handle_infix(&logic::InfixOperator::Minus)?;
                     }
                     code::Instruction::Pop => {
                         last_popped = self.stack.pop();
@@ -65,6 +65,13 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
             }
         }
         Ok(last_popped)
+    }
+    fn handle_infix(&mut self, operator: &logic::InfixOperator) -> Result<(), String> {
+        let right = self.stack.pop().unwrap();
+        let left = self.stack.pop().unwrap();
+        let result = logic::eval_infix(left, operator, right)?;
+        self.stack.push(Rc::new(result));
+        Ok(())
     }
 }
 
@@ -88,10 +95,16 @@ mod test {
 
     #[test]
     fn vm_tests() {
-        let tests = vec![VmTestCase {
-            input: "3 + 4",
-            expected: object::Object::Integer(7),
-        }];
+        let tests = vec![
+            VmTestCase {
+                input: "3 + 4",
+                expected: object::Object::Integer(7),
+            },
+            VmTestCase {
+                input: "5 - 3",
+                expected: object::Object::Integer(2),
+            },
+        ];
         for test in tests {
             run_vm_test(test);
         }
