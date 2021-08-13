@@ -49,6 +49,8 @@ impl<'a> Compiler<'a> {
                     let instruction: code::Instruction = match operator {
                         ast::InfixOperator::Plus => code::Instruction::Add,
                         ast::InfixOperator::Minus => code::Instruction::Sub,
+                        ast::InfixOperator::Multiply => code::Instruction::Mul,
+                        ast::InfixOperator::Divide => code::Instruction::Div,
                         _ => unimplemented!(),
                     };
                     self.push_instruction(instruction);

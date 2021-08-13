@@ -5,6 +5,8 @@ pub enum Instruction {
     Add,
     Sub,
     Pop,
+    Mul,
+    Div,
 }
 impl Instruction {
     fn opcode_byte(&self) -> u8 {
@@ -13,6 +15,8 @@ impl Instruction {
             Self::Add => 1,
             Self::Sub => 2,
             Self::Pop => 3,
+            Self::Mul => 4,
+            Self::Div => 5,
         }
     }
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -21,6 +25,8 @@ impl Instruction {
             Self::Add => vec![],
             Self::Pop => vec![],
             Self::Sub => vec![],
+            Self::Mul => vec![],
+            Self::Div => vec![],
         };
         let mut result = vec![self.opcode_byte()];
         Vec::append(&mut result, &mut operand_bytes);
@@ -44,6 +50,8 @@ impl Instruction {
             1 => Some(Self::Add),
             2 => Some(Self::Sub),
             3 => Some(Self::Pop),
+            4 => Some(Self::Mul),
+            5 => Some(Self::Div),
             _ => panic!("Unknown op byte"),
         }
     }

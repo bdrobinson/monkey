@@ -62,6 +62,12 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
                     code::Instruction::Sub => {
                         self.handle_infix(&logic::InfixOperator::Minus)?;
                     }
+                    code::Instruction::Mul => {
+                        self.handle_infix(&logic::InfixOperator::Multiply)?;
+                    }
+                    code::Instruction::Div => {
+                        self.handle_infix(&logic::InfixOperator::Divide)?;
+                    }
                     code::Instruction::Pop => {
                         last_popped = self.stack.pop();
                     }
@@ -109,6 +115,14 @@ mod test {
             VmTestCase {
                 input: "5 - 3",
                 expected: object::Object::Integer(2),
+            },
+            VmTestCase {
+                input: "5 * 3",
+                expected: object::Object::Integer(15),
+            },
+            VmTestCase {
+                input: "20 / 2",
+                expected: object::Object::Integer(10),
             },
         ];
         for test in tests {
