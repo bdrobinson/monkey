@@ -1,10 +1,11 @@
 use crate::{code, compiler, logic, object};
+use object::Object;
 use std::rc::Rc;
 
 const STACK_SIZE: usize = 2048;
 
 struct Stack<'a> {
-    elements: Vec<Rc<object::Object<'a>>>,
+    elements: Vec<Rc<Object<'a>>>,
 }
 
 impl<'a> Stack<'a> {
@@ -13,10 +14,10 @@ impl<'a> Stack<'a> {
             elements: Vec::with_capacity(STACK_SIZE),
         }
     }
-    fn push(&mut self, obj: Rc<object::Object<'a>>) {
+    fn push(&mut self, obj: Rc<Object<'a>>) {
         self.elements.push(obj);
     }
-    fn pop(&mut self) -> Option<Rc<object::Object<'a>>> {
+    fn pop(&mut self) -> Option<Rc<Object<'a>>> {
         let el = self.elements.pop();
         el
     }
@@ -44,10 +45,10 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
         }
     }
 
-    pub fn run(&mut self) -> Result<Option<Rc<object::Object<'ast>>>, VmError> {
+    pub fn run(&mut self) -> Result<Option<Rc<Object<'ast>>>, VmError> {
         let mut instructions_iter = self.bytecode.instructions.iter();
         let mut should_continue = true;
-        let mut last_popped: Option<Rc<object::Object>> = None;
+        let mut last_popped: Option<Rc<Object>> = None;
         while should_continue {
             let instruction = code::Instruction::from_bytes(&mut instructions_iter);
             if let Some(instruction) = instruction {
@@ -71,6 +72,12 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
                     code::Instruction::Pop => {
                         last_popped = self.stack.pop();
                     }
+                    code::Instruction::True => {
+                        self.stack.push(Rc::new(Object::Boolean(true)));
+                    }
+                    code::Instruction::False => {
+                        self.stack.push(Rc::new(Object::Boolean(false)));
+                    }
                 }
             } else {
                 should_continue = false;
@@ -90,9 +97,10 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
 #[cfg(test)]
 mod test {
     use crate::{compiler, lexer, object, parser, vm};
+    use object::Object;
     struct VmTestCase<'a> {
         input: &'static str,
-        expected: object::Object<'a>,
+        expected: Object<'a>,
     }
 
     fn run_vm_test(case: VmTestCase) {
@@ -110,19 +118,27 @@ mod test {
         let tests = vec![
             VmTestCase {
                 input: "3 + 4",
-                expected: object::Object::Integer(7),
+                expected: Object::Integer(7),
             },
             VmTestCase {
                 input: "5 - 3",
-                expected: object::Object::Integer(2),
+                expected: Object::Integer(2),
             },
             VmTestCase {
                 input: "5 * 3",
-                expected: object::Object::Integer(15),
+                expected: Object::Integer(15),
             },
             VmTestCase {
                 input: "20 / 2",
-                expected: object::Object::Integer(10),
+                expected: Object::Integer(10),
+            },
+            VmTestCase {
+                input: "true",
+                expected: Object::Boolean(true),
+            },
+            VmTestCase {
+                input: "false",
+                expected: Object::Boolean(false),
             },
         ];
         for test in tests {

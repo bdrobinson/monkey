@@ -60,6 +60,14 @@ impl<'a> Compiler<'a> {
                         self.compile(AstNode::Statement(&statement));
                     }
                 }
+                ast::Expression::Boolean { value } => {
+                    let instruction = if *value {
+                        code::Instruction::True
+                    } else {
+                        code::Instruction::False
+                    };
+                    self.push_instruction(instruction)
+                }
                 _ => {}
             },
             AstNode::Program(program) => {
