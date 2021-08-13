@@ -5,14 +5,12 @@ const STACK_SIZE: usize = 2048;
 
 struct Stack<'a> {
     elements: Vec<Rc<object::Object<'a>>>,
-    last_popped: Option<Rc<object::Object<'a>>>,
 }
 
 impl<'a> Stack<'a> {
     fn new() -> Self {
         Stack {
             elements: Vec::with_capacity(STACK_SIZE),
-            last_popped: None,
         }
     }
     fn push(&mut self, obj: Rc<object::Object<'a>>) {
@@ -20,7 +18,6 @@ impl<'a> Stack<'a> {
     }
     fn pop(&mut self) -> Option<Rc<object::Object<'a>>> {
         let el = self.elements.pop();
-        self.last_popped = el.clone();
         el
     }
 }
@@ -41,9 +38,10 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
         }
     }
 
-    pub fn run(&mut self) -> Result<(), String> {
+    pub fn run(&mut self) -> Result<Option<Rc<object::Object<'ast>>>, String> {
         let mut instructions_iter = self.bytecode.instructions.iter();
         let mut should_continue = true;
+        let mut last_popped: Option<Rc<object::Object>> = None;
         while should_continue {
             let instruction = code::Instruction::from_bytes(&mut instructions_iter);
             if let Some(instruction) = instruction {
@@ -59,19 +57,14 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
                         self.stack.push(Rc::new(result));
                     }
                     code::Instruction::Pop => {
-                        self.stack.pop();
+                        last_popped = self.stack.pop();
                     }
                 }
             } else {
                 should_continue = false;
             }
         }
-        Ok(())
-    }
-
-    #[cfg(test)]
-    pub fn last_popped(&self) -> Option<Rc<object::Object<'ast>>> {
-        self.stack.last_popped.clone()
+        Ok(last_popped)
     }
 }
 
@@ -89,9 +82,8 @@ mod test {
         let program = parser.parse_program().unwrap();
         let bytecode = compiler::compile_program(&program);
         let mut vm = vm::Vm::new(&bytecode);
-        vm.run().unwrap();
-        let last_popped = vm.last_popped();
-        assert_eq!(last_popped.as_deref(), Some(&case.expected));
+        let object = vm.run().unwrap();
+        assert_eq!(object.as_deref(), Some(&case.expected));
     }
 
     #[test]
