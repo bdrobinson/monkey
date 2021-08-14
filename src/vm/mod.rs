@@ -93,6 +93,8 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
                     code::Instruction::Bang => {
                         self.handle_prefix(&logic::PrefixOperator::Bang)?;
                     }
+                    code::Instruction::JumpFalse(_) => todo!(),
+                    code::Instruction::Jump(_) => todo!(),
                 }
             } else {
                 should_continue = false;

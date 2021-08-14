@@ -14,6 +14,8 @@ pub enum Instruction {
     GreaterThan,
     Minus,
     Bang,
+    JumpFalse(u16),
+    Jump(u16),
 }
 impl Instruction {
     fn opcode_byte(&self) -> u8 {
@@ -31,6 +33,8 @@ impl Instruction {
             Self::GreaterThan => 10,
             Self::Minus => 11,
             Self::Bang => 12,
+            Self::JumpFalse(_) => 13,
+            Self::Jump(_) => 14,
         }
     }
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -48,6 +52,8 @@ impl Instruction {
             Self::GreaterThan => vec![],
             Self::Minus => vec![],
             Self::Bang => vec![],
+            Self::JumpFalse(position) => position.to_be_bytes().to_vec(),
+            Self::Jump(position) => position.to_be_bytes().to_vec(),
         };
         let mut result = vec![self.opcode_byte()];
         Vec::append(&mut result, &mut operand_bytes);
@@ -61,13 +67,7 @@ impl Instruction {
         // If there is no next, return none to signify we've reached the end.
         let op_byte = iter.next()?;
         match op_byte {
-            0 => {
-                // Constant. Read 2 bytes.
-                let first = *iter.next().unwrap();
-                let second = *iter.next().unwrap();
-                let constant = u16::from_be_bytes([first, second]);
-                Some(Self::Constant(constant))
-            }
+            0 => Some(Self::Constant(read_2_bytes(iter))),
             1 => Some(Self::Add),
             2 => Some(Self::Sub),
             3 => Some(Self::Pop),
@@ -80,7 +80,15 @@ impl Instruction {
             10 => Some(Self::GreaterThan),
             11 => Some(Self::Minus),
             12 => Some(Self::Bang),
+            13 => Some(Self::JumpFalse(read_2_bytes(iter))),
+            14 => Some(Self::Jump(read_2_bytes(iter))),
             _ => panic!("Unknown op byte"),
         }
     }
+}
+
+fn read_2_bytes(iter: &mut std::slice::Iter<u8>) -> u16 {
+    let first = *iter.next().unwrap();
+    let second = *iter.next().unwrap();
+    u16::from_be_bytes([first, second])
 }
