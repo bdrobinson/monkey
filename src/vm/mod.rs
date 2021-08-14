@@ -174,14 +174,14 @@ mod test {
                 input: "2>5",
                 expected: Object::Boolean(false),
             },
-            // VmTestCase {
-            //     input: "2<5",
-            //     expected: Object::Boolean(true),
-            // },
-            // VmTestCase {
-            //     input: "2<1",
-            //     expected: Object::Boolean(false),
-            // },
+            VmTestCase {
+                input: "2<5",
+                expected: Object::Boolean(true),
+            },
+            VmTestCase {
+                input: "2<1",
+                expected: Object::Boolean(false),
+            },
         ];
         for test in tests {
             run_vm_test(test);

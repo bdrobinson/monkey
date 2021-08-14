@@ -1,3 +1,5 @@
+use ast::InfixOperator;
+
 use crate::{ast, code, object};
 use std::convert::TryInto;
 use std::rc::Rc;
@@ -44,20 +46,25 @@ impl<'a> Compiler<'a> {
                     right,
                     operator,
                 } => {
-                    self.compile(AstNode::Expression(&left));
-                    self.compile(AstNode::Expression(&right));
-                    let instruction: code::Instruction = match operator {
-                        ast::InfixOperator::Plus => code::Instruction::Add,
-                        ast::InfixOperator::Minus => code::Instruction::Sub,
-                        ast::InfixOperator::Multiply => code::Instruction::Mul,
-                        ast::InfixOperator::Divide => code::Instruction::Div,
-                        ast::InfixOperator::Eq => code::Instruction::Equal,
-                        ast::InfixOperator::NotEq => code::Instruction::NotEqual,
-                        ast::InfixOperator::Gt => code::Instruction::GreaterThan,
-                        // ast::InfixOperator::Lt => code::Instruction::GreaterThan,
-                        _ => unimplemented!(),
-                    };
-                    self.push_instruction(instruction);
+                    if let InfixOperator::Lt = operator {
+                        self.compile(AstNode::Expression(&right));
+                        self.compile(AstNode::Expression(&left));
+                        self.push_instruction(code::Instruction::GreaterThan);
+                    } else {
+                        self.compile(AstNode::Expression(&left));
+                        self.compile(AstNode::Expression(&right));
+                        let instruction: code::Instruction = match operator {
+                            ast::InfixOperator::Plus => code::Instruction::Add,
+                            ast::InfixOperator::Minus => code::Instruction::Sub,
+                            ast::InfixOperator::Multiply => code::Instruction::Mul,
+                            ast::InfixOperator::Divide => code::Instruction::Div,
+                            ast::InfixOperator::Eq => code::Instruction::Equal,
+                            ast::InfixOperator::NotEq => code::Instruction::NotEqual,
+                            ast::InfixOperator::Gt => code::Instruction::GreaterThan,
+                            _ => unimplemented!(),
+                        };
+                        self.push_instruction(instruction);
+                    }
                 }
                 ast::Expression::Block { statements } => {
                     for statement in statements {
