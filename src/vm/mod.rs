@@ -101,17 +101,20 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
         Ok(last_popped)
     }
     fn handle_prefix(&mut self, operator: &logic::PrefixOperator) -> Result<(), VmError> {
-        let operand = self.stack.pop().ok_or(VmError::PopEmptyStack)?;
+        let operand = self.try_pop()?;
         let result = logic::eval_prefix(operand, operator).map_err(VmError::Misc)?;
         self.stack.push(Rc::new(result));
         Ok(())
     }
     fn handle_infix(&mut self, operator: &logic::InfixOperator) -> Result<(), VmError> {
-        let right = self.stack.pop().ok_or(VmError::PopEmptyStack)?;
-        let left = self.stack.pop().ok_or(VmError::PopEmptyStack)?;
+        let right = self.try_pop()?;
+        let left = self.try_pop()?;
         let result = logic::eval_infix(left, operator, right).map_err(VmError::Misc)?;
         self.stack.push(Rc::new(result));
         Ok(())
+    }
+    fn try_pop(&mut self) -> Result<Rc<Object<'ast>>, VmError> {
+        self.stack.pop().ok_or(VmError::PopEmptyStack)
     }
 }
 
