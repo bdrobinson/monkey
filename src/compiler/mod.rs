@@ -38,8 +38,13 @@ impl<'a> Compiler<'a> {
                 ast::Expression::IntegerLiteral { value } => {
                     self.add_constant(object::Object::Integer(*value));
                 }
-                ast::Expression::Prefix { right, .. } => {
+                ast::Expression::Prefix { right, operator } => {
                     self.compile(AstNode::Expression(&right));
+                    let instruction = match operator {
+                        ast::PrefixOperator::Bang => code::Instruction::Bang,
+                        ast::PrefixOperator::Minus => code::Instruction::Minus,
+                    };
+                    self.push_instruction(instruction);
                 }
                 ast::Expression::Infix {
                     left,

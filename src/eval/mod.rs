@@ -1,5 +1,5 @@
-use crate::ast;
 use crate::object::{environment::Environment, Object};
+use crate::{ast, logic};
 use core::cell::RefCell;
 use std::rc::Rc;
 
@@ -30,24 +30,12 @@ pub fn eval_expression<'a>(
         } => {
             let left = eval_expression(left, Rc::clone(&env))?;
             let right = eval_expression(right, Rc::clone(&env))?;
-            crate::logic::eval_infix(left, operator, right).map(Rc::new)
+            logic::eval_infix(left, operator, right).map(Rc::new)
         }
         ast::Expression::Boolean { value } => Ok(Rc::new(Object::Boolean(*value))),
         ast::Expression::Prefix { operator, right } => {
             let object = eval_expression(right, env)?;
-            match (&operator, &*object) {
-                (ast::PrefixOperator::Minus, Object::Integer(value)) => {
-                    Ok(Rc::new(Object::Integer(-value)))
-                }
-                (ast::PrefixOperator::Bang, Object::Boolean(value)) => {
-                    Ok(Rc::new(Object::Boolean(!value)))
-                }
-                _ => Err(format!(
-                    "The prefix {} cannot appear before type {}",
-                    operator,
-                    object.type_name()
-                )),
-            }
+            logic::eval_prefix(object, operator).map(Rc::new)
         }
         ast::Expression::If {
             condition,

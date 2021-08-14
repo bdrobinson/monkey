@@ -140,20 +140,4 @@ impl Display for BlockStatement {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum PrefixOperator {
-    Bang,
-    Minus,
-}
-
-impl fmt::Display for PrefixOperator {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let string = match self {
-            PrefixOperator::Bang => "!",
-            PrefixOperator::Minus => "-",
-        };
-        write!(f, "{}", string)
-    }
-}
-
-pub use logic::InfixOperator;
+pub use logic::{InfixOperator, PrefixOperator};

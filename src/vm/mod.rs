@@ -87,12 +87,24 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
                     code::Instruction::GreaterThan => {
                         self.handle_infix(&logic::InfixOperator::Gt)?;
                     }
+                    code::Instruction::Minus => {
+                        self.handle_prefix(&logic::PrefixOperator::Minus)?;
+                    }
+                    code::Instruction::Bang => {
+                        self.handle_prefix(&logic::PrefixOperator::Bang)?;
+                    }
                 }
             } else {
                 should_continue = false;
             }
         }
         Ok(last_popped)
+    }
+    fn handle_prefix(&mut self, operator: &logic::PrefixOperator) -> Result<(), VmError> {
+        let operand = self.stack.pop().ok_or(VmError::PopEmptyStack)?;
+        let result = logic::eval_prefix(operand, operator).map_err(VmError::Misc)?;
+        self.stack.push(Rc::new(result));
+        Ok(())
     }
     fn handle_infix(&mut self, operator: &logic::InfixOperator) -> Result<(), VmError> {
         let right = self.stack.pop().ok_or(VmError::PopEmptyStack)?;
@@ -181,6 +193,19 @@ mod test {
             VmTestCase {
                 input: "2<1",
                 expected: Object::Boolean(false),
+            },
+            // Prefix operators
+            VmTestCase {
+                input: "!true",
+                expected: Object::Boolean(false),
+            },
+            VmTestCase {
+                input: "!false",
+                expected: Object::Boolean(true),
+            },
+            VmTestCase {
+                input: "-3",
+                expected: Object::Integer(-3),
             },
         ];
         for test in tests {
