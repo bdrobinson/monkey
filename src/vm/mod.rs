@@ -78,6 +78,15 @@ impl<'ast, 'bytecode> Vm<'ast, 'bytecode> {
                     code::Instruction::False => {
                         self.stack.push(Rc::new(Object::Boolean(false)));
                     }
+                    code::Instruction::Equal => {
+                        self.handle_infix(&logic::InfixOperator::Eq)?;
+                    }
+                    code::Instruction::NotEqual => {
+                        self.handle_infix(&logic::InfixOperator::NotEq)?;
+                    }
+                    code::Instruction::GreaterThan => {
+                        self.handle_infix(&logic::InfixOperator::Gt)?;
+                    }
                 }
             } else {
                 should_continue = false;
@@ -140,6 +149,39 @@ mod test {
                 input: "false",
                 expected: Object::Boolean(false),
             },
+            // Comparison ops
+            VmTestCase {
+                input: "1==1",
+                expected: Object::Boolean(true),
+            },
+            VmTestCase {
+                input: "1==2",
+                expected: Object::Boolean(false),
+            },
+            VmTestCase {
+                input: "1!=2",
+                expected: Object::Boolean(true),
+            },
+            VmTestCase {
+                input: "1!=1",
+                expected: Object::Boolean(false),
+            },
+            VmTestCase {
+                input: "2>1",
+                expected: Object::Boolean(true),
+            },
+            VmTestCase {
+                input: "2>5",
+                expected: Object::Boolean(false),
+            },
+            // VmTestCase {
+            //     input: "2<5",
+            //     expected: Object::Boolean(true),
+            // },
+            // VmTestCase {
+            //     input: "2<1",
+            //     expected: Object::Boolean(false),
+            // },
         ];
         for test in tests {
             run_vm_test(test);

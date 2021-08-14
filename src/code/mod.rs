@@ -9,6 +9,9 @@ pub enum Instruction {
     Div,
     True,
     False,
+    Equal,
+    NotEqual,
+    GreaterThan,
 }
 impl Instruction {
     fn opcode_byte(&self) -> u8 {
@@ -21,6 +24,9 @@ impl Instruction {
             Self::Div => 5,
             Self::True => 6,
             Self::False => 7,
+            Self::Equal => 8,
+            Self::NotEqual => 9,
+            Self::GreaterThan => 10,
         }
     }
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -33,6 +39,9 @@ impl Instruction {
             Self::Div => vec![],
             Self::True => vec![],
             Self::False => vec![],
+            Self::Equal => vec![],
+            Self::NotEqual => vec![],
+            Self::GreaterThan => vec![],
         };
         let mut result = vec![self.opcode_byte()];
         Vec::append(&mut result, &mut operand_bytes);
@@ -60,6 +69,9 @@ impl Instruction {
             5 => Some(Self::Div),
             6 => Some(Self::True),
             7 => Some(Self::False),
+            8 => Some(Self::Equal),
+            9 => Some(Self::NotEqual),
+            10 => Some(Self::GreaterThan),
             _ => panic!("Unknown op byte"),
         }
     }

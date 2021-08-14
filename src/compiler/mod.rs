@@ -51,6 +51,10 @@ impl<'a> Compiler<'a> {
                         ast::InfixOperator::Minus => code::Instruction::Sub,
                         ast::InfixOperator::Multiply => code::Instruction::Mul,
                         ast::InfixOperator::Divide => code::Instruction::Div,
+                        ast::InfixOperator::Eq => code::Instruction::Equal,
+                        ast::InfixOperator::NotEq => code::Instruction::NotEqual,
+                        ast::InfixOperator::Gt => code::Instruction::GreaterThan,
+                        // ast::InfixOperator::Lt => code::Instruction::GreaterThan,
                         _ => unimplemented!(),
                     };
                     self.push_instruction(instruction);
